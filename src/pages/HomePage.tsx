@@ -1,5 +1,5 @@
 function HomePage() {
-  return <h1>Home</h1>;
+  return <button className="btn btn-primary">Test Button</button>;
 }
 
 export default HomePage;
