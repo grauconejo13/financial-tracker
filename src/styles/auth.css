@@ -1,0 +1,227 @@
+/* =============================================
+   ClearPath - Authentication Pages Styling
+   Color Palette:
+   - Deep Royal Purple: #31008D
+   - Light Lavender: #7E78BA
+   - Vibrant Cyan: #4DD0E1
+   - Clean White: #FFFFFF
+   ============================================= */
+
+/* ---- Page Layout ---- */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #31008d 0%, #7e78ba 50%, #4dd0e1 100%);
+  padding: 20px;
+}
+
+/* ---- Card Container ---- */
+.auth-card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(49, 0, 141, 0.25);
+  padding: 40px;
+  width: 100%;
+  max-width: 460px;
+  animation: fadeInUp 0.4s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---- Logo / Brand ---- */
+.auth-brand {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.auth-brand h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #31008d;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.auth-brand p {
+  color: #7e78ba;
+  font-size: 0.95rem;
+  margin-top: 4px;
+}
+
+/* ---- Form Elements ---- */
+.auth-form .form-label {
+  font-weight: 600;
+  color: #31008d;
+  font-size: 0.875rem;
+  margin-bottom: 4px;
+}
+
+.auth-form .form-control {
+  border: 2px solid #e0dced;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.auth-form .form-control:focus {
+  border-color: #7e78ba;
+  box-shadow: 0 0 0 3px rgba(126, 120, 186, 0.25);
+}
+
+.auth-form .form-control.is-invalid {
+  border-color: #dc3545;
+}
+
+.auth-form .form-control.is-invalid:focus {
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.2);
+}
+
+/* ---- Name Row (side by side) ---- */
+.name-row {
+  display: flex;
+  gap: 12px;
+}
+
+.name-row .name-field {
+  flex: 1;
+}
+
+/* ---- Submit Button ---- */
+.auth-btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+  background: linear-gradient(135deg, #31008d, #7e78ba);
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.1s ease;
+  margin-top: 8px;
+}
+
+.auth-btn:hover {
+  opacity: 0.9;
+}
+
+.auth-btn:active {
+  transform: scale(0.98);
+}
+
+.auth-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ---- Loading Spinner inside Button ---- */
+.auth-btn .spinner-border {
+  width: 1.2rem;
+  height: 1.2rem;
+  border-width: 2px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+/* ---- Alert Messages ---- */
+.auth-alert {
+  border-radius: 10px;
+  font-size: 0.9rem;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  border: none;
+}
+
+.auth-alert.alert-danger {
+  background-color: #fdecea;
+  color: #b71c1c;
+}
+
+.auth-alert.alert-success {
+  background-color: #e8f5e9;
+  color: #1b5e20;
+}
+
+/* ---- Footer Link ---- */
+.auth-footer {
+  text-align: center;
+  margin-top: 24px;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.auth-footer a {
+  color: #31008d;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.auth-footer a:hover {
+  text-decoration: underline;
+  color: #7e78ba;
+}
+
+/* ---- Password Strength Indicator ---- */
+.password-strength {
+  height: 4px;
+  border-radius: 2px;
+  margin-top: 6px;
+  transition: all 0.3s ease;
+  background-color: #e0dced;
+}
+
+.password-strength .strength-bar {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.strength-weak {
+  width: 33%;
+  background-color: #dc3545;
+}
+
+.strength-medium {
+  width: 66%;
+  background-color: #ffc107;
+}
+
+.strength-strong {
+  width: 100%;
+  background-color: #28a745;
+}
+
+.password-strength-text {
+  font-size: 0.75rem;
+  margin-top: 2px;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 24px;
+    margin: 10px;
+  }
+
+  .name-row {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .auth-brand h1 {
+    font-size: 1.6rem;
+  }
+}
