@@ -1,0 +1,35 @@
+:root {
+  --bs-primary: #5b5f97;
+  --bs-primary-rgb: 91, 95, 151;
+
+  --bs-secondary: #3a0ca3;
+  --bs-secondary-rgb: 58, 12, 163;
+
+  --bs-info: #4cc9f0;
+  --bs-info-rgb: 76, 201, 240;
+
+  --bs-body-bg: #f8f9ff;
+  --bs-body-color: #111827;
+
+  /* Aliases for app components */
+  --primary-dark: var(--bs-primary);
+  --bg-page: var(--bs-body-bg);
+  --bg-white: #ffffff;
+  --btn-primary: var(--bs-primary);
+  --banner-cyan: var(--bs-info);
+  --text-dark: var(--bs-body-color);
+  --text-muted: #6b7280;
+  --border-light: #e5e7eb;
+  --income-green: #2e7d32;
+  --expense-red: #c62828;
+}
+
+.btn-primary {
+  background-color: #5b5f97 !important;
+  border-color: #5b5f97 !important;
+}
+
+.btn-primary:hover {
+  background-color: #3a0ca3 !important;
+  border-color: #3a0ca3 !important;
+}

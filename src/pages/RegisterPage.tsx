@@ -1,34 +1,28 @@
 import { useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
-import type { LoginResponse } from "../types/auth.types";
 import "../styles/auth.css";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
-  const successMessage = (location.state as { message?: string })?.message;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      const data = await api.request<LoginResponse>("/auth/login", {
+      await api.request("/auth/register", {
         method: "POST",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, displayName }),
       });
-      login(data.token, data.user);
-      navigate(from, { replace: true });
+      navigate("/login", { state: { message: "Account created. Please log in." } });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Invalid email or password.");
+      setError(err instanceof Error ? err.message : "Registration failed");
     } finally {
       setLoading(false);
     }
@@ -38,8 +32,7 @@ export default function LoginPage() {
     <div className="auth-page">
       <div className="auth-card">
         <h1>ClearPath</h1>
-        <h2>Log in to your account</h2>
-        {successMessage && <div className="auth-success">{successMessage}</div>}
+        <h2>Create your account</h2>
         <form onSubmit={handleSubmit}>
           {error && <div className="auth-error">{error}</div>}
           <div className="form-group">
@@ -54,22 +47,33 @@ export default function LoginPage() {
             />
           </div>
           <div className="form-group">
-            <label>Password</label>
+            <label>Password (min 6 characters)</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
-              autoComplete="current-password"
+              minLength={6}
+              autoComplete="new-password"
+            />
+          </div>
+          <div className="form-group">
+            <label>Display Name (optional)</label>
+            <input
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="Your name"
+              maxLength={50}
             />
           </div>
           <button type="submit" disabled={loading} className="btn-primary">
-            {loading ? "Signing in..." : "Log in"}
+            {loading ? "Creating account..." : "Create account"}
           </button>
         </form>
         <p className="auth-footer">
-          Don&apos;t have an account? <Link to="/register">Create account</Link>
+          Already have an account? <Link to="/login">Log in</Link>
         </p>
       </div>
     </div>

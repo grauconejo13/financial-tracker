@@ -1,15 +1,11 @@
 import mongoose from 'mongoose';
-import { ENV } from './env';
 
-export const connectDB = async () => {
+export const connectDB = async (): Promise<void> => {
   try {
-    await mongoose.connect(ENV.MONGO_URI);
-    // eslint-disable-next-line no-console
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/clearpath');
     console.log('MongoDB connected');
   } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error('MongoDB connection error', err);
+    console.error('MongoDB connection error:', err);
     process.exit(1);
   }
 };
-

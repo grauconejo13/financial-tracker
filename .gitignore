@@ -13,3 +13,6 @@ target/
 
 # OS
 .DS_Store
+
+# Local project readme (do not push)
+README.md
