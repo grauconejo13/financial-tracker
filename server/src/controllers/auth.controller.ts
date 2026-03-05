@@ -1,65 +1,94 @@
-import { Request, Response, NextFunction } from 'express';
-import { User } from '../models/User.model';
-import { hashPassword, comparePassword } from '../utils/hashPassword';
-import { generateToken } from '../utils/generateToken';
+import { Request, Response } from 'express';
+import { validationResult, body } from 'express-validator';
+import { User } from '../models/User.model.js';
+import { BlacklistedToken } from '../models/BlacklistedToken.model.js';
+import { hashPassword, comparePassword } from '../utils/hashPassword.js';
+import { generateToken, decodeToken } from '../utils/generateToken.js';
+import { AuthRequest } from '../middleware/auth.middleware.js';
 
-export const register = async (req: Request, res: Response, next: NextFunction) => {
+export const registerValidation = [
+  body('email').isEmail().withMessage('Please enter a valid email').normalizeEmail(),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  body('displayName').optional().trim().isLength({ max: 50 }),
+];
+
+export async function register(req: Request, res: Response): Promise<void> {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    res.status(400).json({ message: errors.array()[0].msg });
+    return;
+  }
+  const { email, password, displayName } = req.body;
   try {
-    const { email, password } = req.body as { email?: string; password?: string };
-
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
-    }
-
-    const existing = await User.findOne({ email: email.toLowerCase() });
+    const existing = await User.findOne({ email });
     if (existing) {
-      return res.status(409).json({ message: 'User with this email already exists' });
+      res.status(409).json({ message: 'Email already exists.' });
+      return;
     }
-
     const hashed = await hashPassword(password);
-
-    const user = await User.create({
-      email: email.toLowerCase(),
-      password: hashed
-    });
-
-    const token = generateToken(user.id, user.role);
-
-    return res.status(201).json({
-      user: { id: user.id, email: user.email, role: user.role },
-      token
+    const user = await User.create({ email, password: hashed, displayName: displayName || '' });
+    res.status(201).json({
+      message: 'Account created successfully',
+      user: { id: user._id, email: user.email, displayName: user.displayName },
     });
   } catch (err) {
-    next(err);
+    if ((err as { code?: number }).code === 11000) {
+      res.status(409).json({ message: 'Email already exists.' });
+      return;
+    }
+    res.status(500).json({ message: 'Registration failed. Please try again.' });
   }
-};
+}
 
-export const login = async (req: Request, res: Response, next: NextFunction) => {
+export const loginValidation = [body('email').isEmail(), body('password').notEmpty()];
+
+export async function login(req: Request, res: Response): Promise<void> {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    res.status(400).json({ message: 'Invalid email or password.' });
+    return;
+  }
+  const { email, password } = req.body;
   try {
-    const { email, password } = req.body as { email?: string; password?: string };
-
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
+    const user = await User.findOne({ email }).select('+password');
+    if (!user || !(await comparePassword(password, user.password))) {
+      res.status(401).json({ message: 'Invalid email or password.' });
+      return;
     }
-
-    const user = await User.findOne({ email: email.toLowerCase() });
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-
-    const valid = await comparePassword(password, user.password);
-    if (!valid) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-
-    const token = generateToken(user.id, user.role);
-
-    return res.json({
-      user: { id: user.id, email: user.email, role: user.role },
-      token
+    const token = generateToken(user._id.toString());
+    res.json({
+      message: 'Login successful',
+      token,
+      user: { id: user._id, email: user.email, displayName: user.displayName },
     });
   } catch (err) {
-    next(err);
+    res.status(500).json({ message: 'Login failed. Please try again.' });
   }
-};
+}
 
+export async function logout(req: AuthRequest, res: Response): Promise<void> {
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  if (token) {
+    try {
+      const decoded = decodeToken(token);
+      if (decoded?.exp) {
+        await BlacklistedToken.create({ token, expiresAt: new Date(decoded.exp * 1000) });
+      }
+    } catch {}
+  }
+  res.json({ message: 'Logged out successfully' });
+}
+
+export async function me(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const user = await User.findById(req.user!.id).select('-password');
+    if (!user) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+    res.json({ user });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch user' });
+  }
+}

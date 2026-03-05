@@ -1,16 +1,10 @@
-import app from './app';
-import { ENV } from './config/env';
-import { connectDB } from './config/db';
+import 'dotenv/config';
+import { connectDB } from './config/db.js';
+import app from './app.js';
+import { env } from './config/env.js';
 
-const start = async () => {
-  await connectDB();
-
-  const port = Number(ENV.PORT) || 4000;
-  app.listen(port, () => {
-    // eslint-disable-next-line no-console
-    console.log(`Server running on http://localhost:${port}`);
+connectDB().then(() => {
+  app.listen(env.PORT, () => {
+    console.log(`ClearPath API running on port ${env.PORT}`);
   });
-};
-
-start();
-
+});

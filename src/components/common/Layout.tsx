@@ -1,11 +1,20 @@
 import { ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 interface LayoutProps {
   children: ReactNode;
 }
 
 function Layout({ children }: LayoutProps) {
+  const { token, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
+
   return (
     <div className="option2 d-flex flex-column min-vh-100">
       {/* Navbar */}
@@ -29,7 +38,7 @@ function Layout({ children }: LayoutProps) {
     </button>
 
     <div className="collapse navbar-collapse" id="navbarNav">
-      <ul className="navbar-nav ms-auto">
+      <ul className="navbar-nav me-auto">
         <li className="nav-item">
           <Link className="nav-link" to="/dashboard">
             Dashboard
@@ -45,10 +54,22 @@ function Layout({ children }: LayoutProps) {
             Ghost
           </Link>
         </li>
+      </ul>
+      <ul className="navbar-nav ms-3 border-start border-light border-opacity-50 ps-3">
         <li className="nav-item">
-          <Link className="nav-link" to="/login">
-            Login
-          </Link>
+          {token ? (
+            <button
+              type="button"
+              className="btn btn-outline-light btn-sm"
+              onClick={handleLogout}
+            >
+              Log out
+            </button>
+          ) : (
+            <Link className="btn btn-outline-light btn-sm" to="/login">
+              Login
+            </Link>
+          )}
         </li>
       </ul>
     </div>
