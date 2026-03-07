@@ -46,6 +46,11 @@ function Layout({ children }: LayoutProps) {
           </Link>
         </li>
         <li className="nav-item">
+          <Link className="nav-link" to="/income">
+            Income
+          </Link>
+        </li>
+        <li className="nav-item">
           <Link className="nav-link" to="/login">
             Login
           </Link>

@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8080/api/income";
+const API_URL = "http://localhost:4000/api/income";
 
 export interface IncomeRequest {
   amount: number;
