@@ -7,7 +7,7 @@ import transactionRoutes from './routes/transaction.routes';
 import debtRoutes from './routes/debt.routes';
 import authRoutes from './routes/auth.routes';
 import incomeRoutes from './routes/income.routes';
-import expenseRoutes from './routes/transaction.routes';
+import expenseRoutes from './routes/expense.routes';
 
 const app = express();
 
