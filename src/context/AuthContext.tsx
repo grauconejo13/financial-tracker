@@ -1,168 +1,70 @@
-// =============================================
-// ClearPath - Authentication Context
-// Manages global auth state across the app
-// Handles token storage in localStorage
-// =============================================
+import { createContext, useContext, useState, useEffect } from 'react';
+import { api } from '../api/client';
 
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
-import type { ReactNode } from "react";
-import type {
-  AuthContextType,
-  AuthResponse,
-  RegisterRequest,
-  UserInfo,
-} from "../types/auth.types";
-import {
-  registerUser,
-  loginUser,
-  logoutUser,
-  getCurrentUser,
-} from "../api/authApi";
+interface User {
+  id: string;
+  email: string;
+  displayName?: string;
+}
 
-// Create the context with undefined default
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+interface AuthContextType {
+  user: User | null;
+  token: string | null;
+  loading: boolean;
+  login: (token: string, user: User) => void;
+  logout: () => Promise<void>;
+  setToken: (t: string | null) => void;
+}
 
-// Storage keys
-const TOKEN_KEY = "clearpath_token";
-const USER_KEY = "clearpath_user";
+const AuthContext = createContext<AuthContextType | null>(null);
 
-/**
- * AuthProvider wraps the entire app and provides
- * authentication state to all child components.
- */
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<UserInfo | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [token, setTokenState] = useState<string | null>(() => localStorage.getItem('clearpath_token'));
+  const [loading, setLoading] = useState(!!token);
 
-  /**
-   * On app load, check localStorage for existing session.
-   * If a token exists, verify it with the backend.
-   * This handles browser refresh without losing login.
-   */
-  useEffect(() => {
-    const initAuth = async () => {
-      const storedToken = localStorage.getItem(TOKEN_KEY);
-      const storedUser = localStorage.getItem(USER_KEY);
-
-      if (storedToken && storedUser) {
-        try {
-          // Verify token is still valid with backend
-          const response = await getCurrentUser(storedToken);
-
-          if (response.success && response.user) {
-            setToken(storedToken);
-            setUser(response.user);
-          } else {
-            // Token invalid — clear everything
-            localStorage.removeItem(TOKEN_KEY);
-            localStorage.removeItem(USER_KEY);
-          }
-        } catch {
-          // Token expired or server error — clear session
-          localStorage.removeItem(TOKEN_KEY);
-          localStorage.removeItem(USER_KEY);
-        }
-      }
-
-      setIsLoading(false);
-    };
-
-    initAuth();
-  }, []);
-
-  /**
-   * CP-01: REGISTER
-   * Calls backend registration endpoint.
-   * Does NOT auto-login — user must log in after registering.
-   * This matches acceptance test: "redirect to login"
-   */
-  const register = useCallback(
-    async (data: RegisterRequest): Promise<AuthResponse> => {
-      const response = await registerUser(data);
-      return response;
-    },
-    []
-  );
-
-  /**
-   * CP-02: LOGIN
-   * Calls backend login endpoint.
-   * On success, stores token and user in state + localStorage.
-   * This matches acceptance test: "redirect to dashboard"
-   */
-  const login = useCallback(
-    async (email: string, password: string): Promise<AuthResponse> => {
-      const response = await loginUser({ email, password });
-
-      if (response.success && response.token && response.user) {
-        // Store in state
-        setToken(response.token);
-        setUser(response.user);
-
-        // Persist in localStorage for page refresh
-        localStorage.setItem(TOKEN_KEY, response.token);
-        localStorage.setItem(USER_KEY, JSON.stringify(response.user));
-      }
-
-      return response;
-    },
-    []
-  );
-
-  /**
-   * CP-03: LOGOUT
-   * Calls backend to blacklist the token.
-   * Clears all local state and storage.
-   *
-   * Acceptance Tests:
-   * - Session ends when logout button is clicked
-   * - Session must be inactivated for security purposes
-   */
-  const logout = useCallback(async () => {
-    if (token) {
-      try {
-        // Tell backend to blacklist this token
-        await logoutUser(token);
-      } catch {
-        // Even if backend call fails, still clear local session
-        // This ensures user can always log out
-      }
+  const setToken = (newToken: string | null) => {
+    if (newToken) {
+      localStorage.setItem('clearpath_token', newToken);
+      setTokenState(newToken);
+    } else {
+      localStorage.removeItem('clearpath_token');
+      setTokenState(null);
+      setUser(null);
     }
+  };
 
-    // Clear state
-    setToken(null);
-    setUser(null);
-
-    // Clear localStorage
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+  useEffect(() => {
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+    api.request<{ user: User }>('/auth/me').then(({ user }) => setUser(user)).catch(() => setToken(null)).finally(() => setLoading(false));
   }, [token]);
 
-  // Build the context value
-  const contextValue: AuthContextType = {
-    user,
-    token,
-    isAuthenticated: !!token && !!user,
-    isLoading,
-    login,
-    register,
-    logout,
+  const login = (newToken: string, userData: User) => {
+    setToken(newToken);
+    setUser(userData);
+  };
+
+  const logout = async () => {
+    if (token) {
+      try {
+        await api.request('/auth/logout', { method: 'POST' });
+      } catch {}
+    }
+    setToken(null);
   };
 
   return (
-    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, token, loading, login, logout, setToken }}>
+      {children}
+    </AuthContext.Provider>
   );
 }
 
-/**
- * Custom hook to use auth context.
- * Must be used inside an AuthProvider.
- */
-export function useAuth(): AuthContextType {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
 }

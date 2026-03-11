@@ -1,0 +1,24 @@
+:root {
+  --bs-primary: #5b5f97;
+  --bs-primary-rgb: 91, 95, 151;
+
+  --bs-secondary: #3a0ca3;
+  --bs-secondary-rgb: 58, 12, 163;
+
+  --bs-info: #4cc9f0;
+  --bs-info-rgb: 76, 201, 240;
+
+  --bs-body-bg: #f8f9ff;
+  --bs-body-color: #111827;
+}
+
+/* Force override button */
+.btn-primary {
+  background-color: #5b5f97 !important;
+  border-color: #5b5f97 !important;
+}
+
+.btn-primary:hover {
+  background-color: #3a0ca3 !important;
+  border-color: #3a0ca3 !important;
+}
