@@ -27,9 +27,5 @@ app.use('/api/expense', expenseRoutes);
 
 app.use(errorHandler);
 
-app.listen(8080, () => {
-  console.log("Server running on port 8080");
-});
-
 export default app;
 

@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:4000/api/income";
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
 export interface IncomeRequest {
   amount: number;
@@ -10,7 +10,7 @@ export interface IncomeRequest {
 
 export const addIncome = async (data: IncomeRequest) => {
   try {
-    const response = await axios.post(API_URL, data);
+    const response = await axios.post(`${API_BASE}/income`, data);
     return response.data;
   } catch (error: any) {
     throw error.response?.data?.message || "Failed to add income";
