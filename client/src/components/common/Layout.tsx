@@ -1,11 +1,20 @@
 import { ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 interface LayoutProps {
   children: ReactNode;
 }
 
 function Layout({ children }: LayoutProps) {
+  const { user, token, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
+
   return (
     <div className="option2 d-flex flex-column min-vh-100">
       {/* Navbar */}
@@ -50,11 +59,31 @@ function Layout({ children }: LayoutProps) {
             Income
           </Link>
         </li>
-        <li className="nav-item">
-          <Link className="nav-link" to="/login">
-            Login
-          </Link>
-        </li>
+        {token ? (
+          <>
+            <li className="nav-item">
+              <span className="nav-link">{user?.email}</span>
+            </li>
+            <li className="nav-item">
+              <button className="btn btn-outline-light btn-sm ms-1" onClick={handleLogout}>
+                Logout
+              </button>
+            </li>
+          </>
+        ) : (
+          <>
+            <li className="nav-item">
+              <Link className="nav-link" to="/login">
+                Login
+              </Link>
+            </li>
+            <li className="nav-item">
+              <Link className="nav-link" to="/register">
+                Register
+              </Link>
+            </li>
+          </>
+        )}
       </ul>
     </div>
   </div>
