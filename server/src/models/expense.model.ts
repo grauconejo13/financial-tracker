@@ -9,6 +9,11 @@ const expenseSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  classification: {
+    type: String,
+    enum: ["Necessary", "Avoidable"],
+    required: true
+  },
   reason: {
     type: String,
     required: true

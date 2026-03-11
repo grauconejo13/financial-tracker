@@ -7,7 +7,7 @@ import { expenseCategories } from "../models/expenseCategories";
 // Add expense
 export const addExpense = async (req: Request, res: Response) => {
   try {
-    const { amount, category, reason, date } = req.body;
+    const { amount, category, classification, reason, date } = req.body;
 
     if (!amount || amount <= 0) {
       return res.status(400).json({ message: "Valid amount is required." });
@@ -17,8 +17,16 @@ export const addExpense = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Category is required." });
     }
 
+    if(!classification){
+      return res.status(400).json({message: "Classification is required"});
+    }
+
     if (!expenseCategories.includes(category)) {
       return res.status(400).json({ message: "Invalid category." });
+    }
+
+    if (!["Necessary", "Avoidable"].includes(classification)){
+      return res.status(400).json({ message: "Invalid classification"});
     }
 
     if (!reason) {
@@ -32,6 +40,7 @@ export const addExpense = async (req: Request, res: Response) => {
     const newExpense = new Expense ({
       amount,
       category,
+      classification,
       reason,
       date,
     });
@@ -67,15 +76,19 @@ export const viewExpenses = async (req: Request, res: Response) => {
 export const editExpense = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { amount, category, reason, date } = req.body;
+    const { amount, category, classification, reason, date } = req.body;
 
     if (category && !expenseCategories.includes(category)) {
       return res.status(400).json({ message: "Invalid category." });
     }
 
+    if (classification && !["Necessary", "Avoidable"].includes(classification)){
+      return res.status(400).json({message: "Invalid classification"});
+    }
+
     const updatedExpense = await Expense.findByIdAndUpdate(
       id,
-      { amount, category, reason, date },
+      { amount, category, classification, reason, date },
       { new: true }
     );
 
