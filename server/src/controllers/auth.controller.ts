@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Request, Response } from 'express';
 import { validationResult, body } from 'express-validator';
 import { User } from '../models/User.model.js';
@@ -13,6 +14,10 @@ export const registerValidation = [
 ];
 
 export async function register(req: Request, res: Response): Promise<void> {
+  if (mongoose.connection.readyState !== 1) {
+    res.status(503).json({ message: 'Database not connected. Please start MongoDB and restart the server.' });
+    return;
+  }
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(400).json({ message: errors.array()[0].msg });
@@ -36,13 +41,20 @@ export async function register(req: Request, res: Response): Promise<void> {
       res.status(409).json({ message: 'Email already exists.' });
       return;
     }
-    res.status(500).json({ message: 'Registration failed. Please try again.' });
+    const isDbDown = mongoose.connection.readyState !== 1;
+    res.status(isDbDown ? 503 : 500).json({
+      message: isDbDown ? 'Database not connected. Please start MongoDB and restart the server.' : 'Registration failed. Please try again.',
+    });
   }
 }
 
 export const loginValidation = [body('email').isEmail(), body('password').notEmpty()];
 
 export async function login(req: Request, res: Response): Promise<void> {
+  if (mongoose.connection.readyState !== 1) {
+    res.status(503).json({ message: 'Database not connected. Please start MongoDB and restart the server.' });
+    return;
+  }
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(400).json({ message: 'Invalid email or password.' });
