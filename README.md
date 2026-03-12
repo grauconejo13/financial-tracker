@@ -1,10 +1,12 @@
 # ClearPath – Financial Tracker
 
+A full-stack financial tracking web app for managing income, expenses, and debts.
+
 ## Tech Stack
 
 * **Frontend:** React + TypeScript + Vite + Bootstrap
 * **Backend:** Node.js + Express
-* **Database:** SQL (TBD: MySQL / PostgreSQL)
+* **Database:** MongoDB (Mongoose)
 
 ---
 
@@ -19,9 +21,11 @@ financial-tracker
 │   └── package.json
 │
 ├── server        # Express backend API
-│   ├── routes
-│   ├── controllers
-│   ├── models
+│   ├── src
+│   │   ├── routes
+│   │   ├── controllers
+│   │   ├── models
+│   │   └── config
 │   └── package.json
 │
 └── README.md
@@ -29,66 +33,187 @@ financial-tracker
 
 ---
 
-## Getting Started
+## Prerequisites
 
-### 1. Clone the repository
+Before you begin, ensure you have the following installed:
 
-```
-git clone <repository-url>
+- **Node.js** (v18 or higher recommended)
+- **npm** (comes with Node.js)
+- **MongoDB** (local installation or MongoDB Atlas account)
+- **Git**
+
+---
+
+## Setup Guide
+
+Follow these steps to run the app locally and test login, registration, and logout.
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/grauconejo13/financial-tracker.git
 cd financial-tracker
 ```
 
 ---
 
-### 2. Start the Frontend (React + Vite)
+### 2. Database Setup (MongoDB)
 
-```
-cd client
-npm install
-npm run dev
-```
+The app uses MongoDB. Choose one option:
 
-Frontend will run at:
+#### Option A: Local MongoDB
 
-```
-http://localhost:5173
-```
+1. Install MongoDB Community Server from [mongodb.com](https://www.mongodb.com/try/download/community)
+2. Start MongoDB:
+   - **Windows:** MongoDB usually runs as a Windows service. Or run `mongod` in a terminal.
+   - **macOS/Linux:** Run `mongod` or `sudo systemctl start mongod`
+3. Default connection: `mongodb://localhost:27017/clearpath`
+
+#### Option B: MongoDB Atlas (Cloud)
+
+1. Create a free account at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+2. Create a cluster and get your connection string (e.g. `mongodb+srv://user:password@cluster.mongodb.net/clearpath`)
+3. You will use this in the server `.env` file (see step 5)
 
 ---
 
-### 3. Start the Backend (Express API)
+### 3. Server Setup (Backend)
 
-Open another terminal:
+1. Navigate to the server directory:
+   ```bash
+   cd server
+   ```
 
-```
-cd server
-npm install
-npm run dev
-```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-or
+3. Create environment file (optional – defaults work for local dev):
+   ```bash
+   cp .env.example .env
+   ```
+   Edit `.env` if needed:
+   ```
+   PORT=4000
+   MONGO_URI=mongodb://localhost:27017/clearpath
+   JWT_SECRET=your-secret-key-change-in-production
+   ```
 
-```
-npm start
-```
+4. Start the server:
+   ```bash
+   npm run dev
+   ```
 
-Backend typically runs at:
+5. You should see:
+   ```
+   MongoDB connected
+   Server running on http://localhost:4000
+   ```
 
-```
-http://localhost:5000
-```
+6. Keep this terminal open. The backend runs at **http://localhost:4000**
+
+---
+
+### 4. Client Setup (Frontend)
+
+Open a **new terminal** and:
+
+1. Navigate to the client directory:
+   ```bash
+   cd client
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Create environment file:
+   ```bash
+   cp .env.example .env
+   ```
+   The `.env` should contain (server runs on port 4000):
+   ```
+   VITE_API_URL=http://localhost:4000/api
+   ```
+
+4. Start the client:
+   ```bash
+   npm run dev
+   ```
+
+5. You should see:
+   ```
+   VITE v7.x.x ready
+   Local: http://localhost:5173/
+   ```
+
+6. The frontend runs at **http://localhost:5173**
+
+---
+
+### 5. Test Login, Registration & Logout
+
+1. Open **http://localhost:5173** in your browser
+
+2. **Register a new account:**
+   - Click **Register**
+   - Enter an email and password (min 6 characters)
+   - Submit – you should be logged in automatically
+
+3. **Logout:**
+   - Click **Logout** in the header
+
+4. **Login:**
+   - Click **Login**
+   - Enter the same email and password
+   - Submit – you should be logged in
+
+---
+
+## Quick Reference
+
+| Component | URL | Port |
+|-----------|-----|------|
+| Frontend | http://localhost:5173 | 5173 |
+| Backend API | http://localhost:4000 | 4000 |
+| Health check | http://localhost:4000/health | - |
 
 ---
 
 ## Environment Variables
 
-Copy the example file and configure your environment variables.
+### Client (`client/.env`)
 
-```
-cp .env.example .env
-```
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `VITE_API_URL` | Base API URL (no trailing slash) | `http://localhost:4000/api` |
 
-Add database connection details and API configuration as needed.
+### Server (`server/.env`)
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `PORT` | Server port | `4000` |
+| `MONGO_URI` | MongoDB connection string | `mongodb://localhost:27017/clearpath` |
+| `JWT_SECRET` | Secret for JWT tokens | `dev-secret-change-me` |
+
+---
+
+## Troubleshooting
+
+**"MongoDB connection error"**
+- Ensure MongoDB is running (`mongod` or Windows service)
+- Check `MONGO_URI` in `server/.env`
+- For Atlas: ensure your IP is allowed in the Network Access settings
+
+**"Failed to fetch" or login/register not working**
+- Verify the server is running on port 4000
+- Ensure `client/.env` has `VITE_API_URL=http://localhost:4000/api`
+- Restart the client after changing `.env`
+
+**Port already in use**
+- Change `PORT` in `server/.env` and `VITE_API_URL` in `client/.env` accordingly
 
 ---
 
