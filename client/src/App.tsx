@@ -12,6 +12,7 @@ import BudgetPage from "./pages/BudgetPage";
 import GhostPage from "./pages/GhostPage";
 import AdminPage from "./pages/AdminPage";
 import IncomePage from "./pages/IncomePage";
+import ExpensePage from "./pages/ExpensePage";
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
             <Route path="/ghost" element={<ProtectedRoute><GhostPage /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
             <Route path="/income" element={<ProtectedRoute><IncomePage /></ProtectedRoute>} />
+            <Route path="/expense" element={<ProtectedRoute><ExpensePage /></ProtectedRoute>} />
           </Routes>
         </Layout>
       </Router>
