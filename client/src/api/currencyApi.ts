@@ -1,12 +1,16 @@
-export async function saveCurrency(currency: string) {
+import axios from "axios";
 
-  const response = await fetch("/api/user/currency", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ currency })
-  });
+export const saveCurrency = async (currency: string, token: string) => {
 
-  return response.json();
-}
+  const res = await axios.post(
+    "/api/user/currency",
+    { currency },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
+  );
+
+  return res.data;
+};
