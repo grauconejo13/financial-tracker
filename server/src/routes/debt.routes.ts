@@ -4,11 +4,10 @@ import * as debtController from '../controllers/debt.controller';
 
 const router = Router();
 
-// POST /api/debts  (CP-08 create)
-router.post('/', authenticate, debtController.createDebt);
-
-// GET /api/debts  (CP-08 list)
 router.get('/', authenticate, debtController.getMyDebts);
+router.post('/', authenticate, debtController.createDebt);
+router.put('/:id', authenticate, debtController.updateDebt);
+router.delete('/:id', authenticate, debtController.deleteDebt);
 
 export default router;
 

@@ -4,10 +4,10 @@ import * as transactionController from '../controllers/transaction.controller';
 
 const router = Router();
 
-// GET /api/transactions  (CP-13)
-router.get('/', authenticate, transactionController.getTransactions);
+// GET /api/transactions  - list current user's non-deleted transactions
+router.get('/', authenticate, transactionController.getMyTransactions);
 
-// PUT /api/transactions/:id  (CP-07)
+// PUT /api/transactions/:id  - edit transaction (CP-06)
 router.put('/:id', authenticate, transactionController.editTransaction);
 
 // DELETE /api/transactions/:id  (CP-07)

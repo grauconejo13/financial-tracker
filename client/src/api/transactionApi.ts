@@ -1,29 +1,42 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:4000/api/transactions";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+const API_URL = `${API_BASE}/transactions`;
 
-export interface TransactionItem {
+export interface Transaction {
   _id: string;
   type: "income" | "expense";
   amount: number;
   description: string;
   category?: string;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
 }
 
-export const getTransactions = async (): Promise<TransactionItem[]> => {
-  try {
-    const token = localStorage.getItem("clearpath_token");
+export const getTransactions = async (
+  token?: string
+): Promise<Transaction[]> => {
+  const authToken = token || localStorage.getItem("clearpath_token");
 
-    const response = await axios.get(API_URL, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+  const res = await axios.get<{ transactions: Transaction[] }>(API_URL, {
+    headers: {
+      Authorization: `Bearer ${authToken}`,
+    },
+  });
 
-    return response.data.transactions;
-  } catch (error: any) {
-    throw error.response?.data?.message || "Failed to fetch transactions";
-  }
+  return res.data.transactions;
+};
+
+export const deleteTransaction = async (
+  id: string,
+  reason: string,
+  token: string
+): Promise<void> => {
+  await axios.delete(`${API_URL}/${id}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    data: { reason },
+  });
 };

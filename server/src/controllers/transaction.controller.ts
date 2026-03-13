@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import { Transaction } from '../models/Transaction.model';
 import { AuthRequest } from '../middleware/auth.middleware';
 
-export const getTransactions = async (
+export const getMyTransactions = async (
   req: AuthRequest,
   res: Response,
   next: NextFunction
@@ -16,10 +16,10 @@ export const getTransactions = async (
 
     const transactions = await Transaction.find({
       user: user._id,
-      isDeleted: false,
+      isDeleted: false
     }).sort({ createdAt: -1 });
 
-    return res.status(200).json({ transactions });
+    return res.json({ transactions });
   } catch (err) {
     next(err);
   }
@@ -147,4 +147,3 @@ export const editTransaction = async (
     next(err);
   }
 };
-

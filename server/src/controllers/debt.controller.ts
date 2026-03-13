@@ -92,3 +92,84 @@ export const getMyDebts = async (
   }
 };
 
+export const updateDebt = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const user = req.user;
+    if (!user) return res.status(401).json({ message: 'Unauthenticated' });
+
+    const { id } = req.params;
+    const {
+      label,
+      counterparty,
+      amount,
+      currency,
+      direction,
+      dueDate,
+      notes
+    } = req.body as Partial<{
+      label: string;
+      counterparty: string;
+      amount: number;
+      currency: string;
+      direction: 'owed_by_me' | 'owed_to_me';
+      dueDate: string;
+      notes: string;
+    }>;
+
+    const debt = await Debt.findOne({ _id: id, user: user._id });
+    if (!debt) return res.status(404).json({ message: 'Debt not found' });
+
+    const errors: string[] = [];
+    if (label !== undefined) {
+      if (!label || !String(label).trim()) errors.push('Label cannot be empty');
+      else debt.label = String(label).trim();
+    }
+    if (counterparty !== undefined) debt.counterparty = String(counterparty).trim() || undefined;
+    if (amount !== undefined) {
+      const n = Number(amount);
+      if (isNaN(n) || n <= 0) errors.push('Amount must be a positive number');
+      else debt.amount = n;
+    }
+    if (currency !== undefined) debt.currency = String(currency);
+    if (direction !== undefined && ['owed_by_me', 'owed_to_me'].includes(direction)) debt.direction = direction;
+    if (dueDate !== undefined) {
+      if (dueDate === '' || dueDate == null) debt.dueDate = undefined;
+      else {
+        const d = new Date(dueDate);
+        if (!isNaN(d.getTime())) debt.dueDate = d;
+      }
+    }
+    if (notes !== undefined) debt.notes = String(notes).trim() || undefined;
+
+    if (errors.length) return res.status(400).json({ errors });
+    await debt.save();
+    return res.json({ debt });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const deleteDebt = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const user = req.user;
+    if (!user) return res.status(401).json({ message: 'Unauthenticated' });
+
+    const { id } = req.params;
+    const debt = await Debt.findOne({ _id: id, user: user._id });
+    if (!debt) return res.status(404).json({ message: 'Debt not found' });
+
+    await Debt.findByIdAndDelete(id);
+    return res.status(200).json({ message: 'Debt deleted', debt });
+  } catch (err) {
+    next(err);
+  }
+};
+

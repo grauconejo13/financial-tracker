@@ -1,4 +1,12 @@
 :root {
+   /* App theme variables */
+  --primary: #5b5f97;
+  --secondary: #3a0ca3;
+  --accent: #4cc9f0;
+  --bg: #f8f9ff;
+  --text: #111827;
+
+  /* Bootstrap overrides */
   --bs-primary: #5b5f97;
   --bs-primary-rgb: 91, 95, 151;
 

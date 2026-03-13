@@ -14,6 +14,11 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 app.use(morgan('dev'));
+
+app.get('/', (_req, res) => {
+  res.send('ClearPath API is running');
+});
+
 app.use('/api/income', incomeRoutes);
 
 app.get('/health', (_req, res) => {
