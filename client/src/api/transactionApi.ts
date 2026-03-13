@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
 const API_URL = `${API_BASE}/transactions`;
 
 export interface Transaction {
@@ -25,6 +25,24 @@ export const getTransactions = async (
   });
 
   return res.data.transactions;
+};
+
+export const editTransaction = async (
+  id: string,
+  data: {
+    amount?: number;
+    description?: string;
+    category?: string;
+    reason: string;
+  },
+  token: string
+): Promise<void> => {
+  await axios.put(`${API_URL}/${id}`, data, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
 };
 
 export const deleteTransaction = async (
