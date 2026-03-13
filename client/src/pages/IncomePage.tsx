@@ -4,8 +4,7 @@ import {
   addIncome,
   editIncome,
   deleteIncome,
-  type Income,
-  type IncomeRequest
+  type Income
 } from "../api/incomeApi";
 
 const IncomePage = () => {
