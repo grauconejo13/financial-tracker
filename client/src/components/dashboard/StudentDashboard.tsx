@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import TransactionList from "./TransactionList";
 
 function StudentDashboard() {
   const navigate = useNavigate();
@@ -42,15 +43,15 @@ function StudentDashboard() {
           <div key={card.title} className="col-md-4">
             <div
               onClick={() => navigate(card.route)}
-         style={{
-          cursor: "pointer",
-          borderRadius: "12px",
-          padding: "24px",
-          background: "#ffffff",
-          border: "1px solid #e5e7eb",
-          borderLeft: "5px solid var(--accent)",
-          transition: "all 0.2s ease"
-        }}
+              style={{
+                cursor: "pointer",
+                borderRadius: "12px",
+                padding: "24px",
+                background: "#ffffff",
+                border: "1px solid #e5e7eb",
+                borderLeft: "5px solid var(--accent)",
+                transition: "all 0.2s ease"
+              }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = "translateY(-4px)";
                 e.currentTarget.style.boxShadow =
@@ -69,6 +70,8 @@ function StudentDashboard() {
           </div>
         ))}
       </div>
+
+      <TransactionList />
     </div>
   );
 }
