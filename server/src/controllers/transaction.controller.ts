@@ -3,6 +3,28 @@ import mongoose from 'mongoose';
 import { Transaction } from '../models/Transaction.model';
 import { AuthRequest } from '../middleware/auth.middleware';
 
+export const getTransactions = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ message: 'Unauthenticated' });
+    }
+
+    const transactions = await Transaction.find({
+      user: user._id,
+      isDeleted: false,
+    }).sort({ createdAt: -1 });
+
+    return res.status(200).json({ transactions });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const deleteTransaction = async (
   req: AuthRequest,
   res: Response,
