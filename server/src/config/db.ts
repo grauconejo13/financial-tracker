@@ -1,15 +1,11 @@
-import mongoose from 'mongoose';
-import { ENV } from './env';
+import mongoose from "mongoose";
+import { ENV } from "./env";
 
 export const connectDB = async () => {
-  try {
-    await mongoose.connect(ENV.MONGO_URI);
-    // eslint-disable-next-line no-console
-    console.log('MongoDB connected');
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error('MongoDB connection error', err);
-    process.exit(1);
+  if (!ENV.MONGO_URI) {
+    throw new Error("MONGO_URI is not defined");
   }
-};
 
+  await mongoose.connect(ENV.MONGO_URI);
+  console.log("MongoDB connected");
+};
