@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import {
   getDebts,
@@ -6,8 +7,10 @@ import {
   updateDebt,
   deleteDebt,
   type Debt,
-  type DebtRequest
+  type DebtRequest,
 } from "../api/debtApi";
+
+type Direction = "owed_by_me" | "owed_to_me";
 
 const CURRENCIES = [
   { code: "LKR", label: "🇱🇰 LKR – Sri Lankan Rupee" },
@@ -38,18 +41,39 @@ const CURRENCIES = [
   { code: "OMR", label: "🇴🇲 OMR – Omani Rial" },
   { code: "BRL", label: "🇧🇷 BRL – Brazilian Real" },
   { code: "MXN", label: "🇲🇽 MXN – Mexican Peso" },
-  { code: "ARS", label: "🇦🇷 ARS – Argentine Peso" }
+  { code: "ARS", label: "🇦🇷 ARS – Argentine Peso" },
 ];
 
-const emptyForm = {
+type FormType = {
+  label: string;
+  counterparty: string;
+  amount: string | number;
+  currency: string;
+  direction: Direction;
+  dueDate: string;
+  notes: string;
+};
+
+const emptyForm: FormType = {
   label: "",
   counterparty: "",
   amount: "" as string | number,
   currency: "LKR",
-  direction: "owed_by_me" as const,
+  direction: "owed_by_me",
   dueDate: "",
-  notes: ""
+  notes: "",
 };
+
+/* ---------- HELPER ---------- */
+function getErrorMessage(error: unknown): string {
+  if (axios.isAxiosError(error)) {
+    return error.response?.data?.message || "Request failed";
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return "Something went wrong";
+}
 
 const DebtPage = () => {
   const { token } = useAuth();
@@ -59,20 +83,19 @@ const DebtPage = () => {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<typeof emptyForm>(emptyForm);
+  const [editForm, setEditForm] = useState<FormType>(emptyForm);
 
-  const [form, setForm] = useState<typeof emptyForm>({
-    ...emptyForm
-  });
+  const [form, setForm] = useState<FormType>(emptyForm);
+
 
   useEffect(() => {
-    const load = async () => {
+    const load = async () => {  
       if (!token) return;
       try {
         const data = await getDebts(token);
         setDebts(data);
-      } catch (e: any) {
-        setError(e?.response?.data?.message || "Failed to load debts");
+     } catch (e: unknown) {
+        setError(getErrorMessage(e));
       } finally {
         setLoading(false);
       }
@@ -81,12 +104,14 @@ const DebtPage = () => {
   }, [token]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >,
   ) => {
     const { name, value } = e.target;
     setForm((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -127,19 +152,22 @@ const DebtPage = () => {
         currency: form.currency,
         direction: form.direction,
         dueDate: form.dueDate || undefined,
-        notes: form.notes?.trim() || undefined
+        notes: form.notes?.trim() || undefined,
       };
       const created = await addDebt(payload, token);
       setDebts((prev) => [created, ...prev]);
       setForm({
-        ...emptyForm
+        ...emptyForm,
       });
-    } catch (e: any) {
-      const msg =
-        e?.response?.data?.errors?.[0] ||
-        e?.response?.data?.message ||
-        "Failed to add debt";
-      setError(msg);
+    } catch (e:unknown) {
+    const msg = axios.isAxiosError(e)
+    ? e.response?.data?.errors?.[0] ||
+      e.response?.data?.message ||
+      "Failed to add debt"
+    : getErrorMessage(e);
+
+  setError(msg);
+
     } finally {
       setSaving(false);
     }
@@ -153,19 +181,21 @@ const DebtPage = () => {
       amount: String(d.amount),
       currency: d.currency,
       direction: d.direction,
-      dueDate: d.dueDate ? d.dueDate.slice(0, 10) : "",
-      notes: d.notes ?? ""
+      dueDate: d.dueDate ? d.dueDate.slice(0, 10) : "", 
+      notes: d.notes ?? "",
     });
     setError(null);
   };
 
   const handleEditChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >,
   ) => {
     const { name, value } = e.target;
     setEditForm((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -204,16 +234,23 @@ const DebtPage = () => {
           currency: editForm.currency,
           direction: editForm.direction,
           dueDate: editForm.dueDate || undefined,
-          notes: editForm.notes?.trim() || undefined
+          notes: editForm.notes?.trim() || undefined,
         },
-        token
+        token,
       );
       setDebts((prev) => prev.map((d) => (d._id === editingId ? updated : d)));
       setEditingId(null);
       setEditForm(emptyForm);
-    } catch (e: any) {
-      setError(e?.response?.data?.message || e?.response?.data?.errors?.[0] || "Update failed");
-    } finally {
+    } catch (e:unknown) {
+      const msg = axios.isAxiosError(e)
+    ? e.response?.data?.errors?.[0] ||
+      e.response?.data?.message ||
+      "Update failed"
+    : getErrorMessage(e);
+
+  setError(msg);
+
+  } finally {
       setSaving(false);
     }
   };
@@ -225,10 +262,17 @@ const DebtPage = () => {
       await deleteDebt(deleteId, token);
       setDebts((prev) => prev.filter((d) => d._id !== deleteId));
       setDeleteId(null);
-    } catch (e: any) {
-      setError(e?.response?.data?.message || "Delete failed");
-    } finally {
-      setSaving(false);
+    } catch (e:unknown ) {
+       const msg = axios.isAxiosError(e)
+    ? e.response?.data?.errors?.[0] ||
+      e.response?.data?.message ||
+      "Delete failed"
+    : getErrorMessage(e);
+
+  setError(msg);
+
+     } finally {
+      setSaving(false); 
     }
   };
 
@@ -353,7 +397,9 @@ const DebtPage = () => {
                   {d.amount} {d.currency}
                 </td>
                 <td>{d.direction === "owed_by_me" ? "I owe" : "Owes me"}</td>
-                <td>{d.dueDate ? new Date(d.dueDate).toLocaleDateString() : "-"}</td>
+                <td>
+                  {d.dueDate ? new Date(d.dueDate).toLocaleDateString() : "-"}
+                </td>
                 <td>{d.notes || "-"}</td>
                 <td>
                   <button
@@ -366,7 +412,10 @@ const DebtPage = () => {
                   <button
                     type="button"
                     className="btn btn-sm btn-outline-danger"
-                    onClick={() => { setDeleteId(d._id); setError(null); }}
+                    onClick={() => {
+                      setDeleteId(d._id);
+                      setError(null);
+                    }}
                   >
                     Delete
                   </button>
@@ -379,53 +428,116 @@ const DebtPage = () => {
 
       {/* Edit modal */}
       {editingId && (
-        <div className="modal d-block" style={{ background: "rgba(0,0,0,0.4)" }}>
+        <div
+          className="modal d-block"
+          style={{ background: "rgba(0,0,0,0.4)" }}
+        >
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">Edit debt</h5>
-                <button type="button" className="btn-close" onClick={() => setEditingId(null)} disabled={saving} />
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setEditingId(null)}
+                  disabled={saving}
+                />
               </div>
               <div className="modal-body">
                 <div className="mb-2">
                   <label className="form-label">Label</label>
-                  <input className="form-control" name="label" value={editForm.label} onChange={handleEditChange} />
+                  <input
+                    className="form-control"
+                    name="label"
+                    value={editForm.label}
+                    onChange={handleEditChange}
+                  />
                 </div>
                 <div className="mb-2">
                   <label className="form-label">Counterparty</label>
-                  <input className="form-control" name="counterparty" value={editForm.counterparty} onChange={handleEditChange} />
+                  <input
+                    className="form-control"
+                    name="counterparty"
+                    value={editForm.counterparty}
+                    onChange={handleEditChange}
+                  />
                 </div>
                 <div className="mb-2">
                   <label className="form-label">Amount</label>
-                  <input className="form-control" type="number" step={0.01} name="amount" value={editForm.amount} onChange={handleEditChange} />
+                  <input
+                    className="form-control"
+                    type="number"
+                    step={0.01}
+                    name="amount"
+                    value={editForm.amount}
+                    onChange={handleEditChange}
+                  />
                 </div>
                 <div className="mb-2">
                   <label className="form-label">Currency</label>
-                  <select className="form-select" name="currency" value={editForm.currency} onChange={handleEditChange}>
+                  <select
+                    className="form-select"
+                    name="currency"
+                    value={editForm.currency}
+                    onChange={handleEditChange}
+                  >
                     {CURRENCIES.map((c) => (
-                      <option key={c.code} value={c.code}>{c.label}</option>
+                      <option key={c.code} value={c.code}>
+                        {c.label}
+                      </option>
                     ))}
                   </select>
                 </div>
                 <div className="mb-2">
                   <label className="form-label">Direction</label>
-                  <select className="form-select" name="direction" value={editForm.direction} onChange={handleEditChange}>
+                  <select
+                    className="form-select"
+                    name="direction"
+                    value={editForm.direction}
+                    onChange={handleEditChange}
+                  >
                     <option value="owed_by_me">I owe</option>
                     <option value="owed_to_me">Owes me</option>
                   </select>
                 </div>
                 <div className="mb-2">
                   <label className="form-label">Due date</label>
-                  <input className="form-control" type="date" name="dueDate" value={editForm.dueDate || ""} onChange={handleEditChange} />
+                  <input
+                    className="form-control"
+                    type="date"
+                    name="dueDate"
+                    value={editForm.dueDate || ""}
+                    onChange={handleEditChange}
+                  />
                 </div>
                 <div className="mb-2">
                   <label className="form-label">Notes</label>
-                  <textarea className="form-control" name="notes" value={editForm.notes || ""} onChange={handleEditChange} rows={2} />
+                  <textarea
+                    className="form-control"
+                    name="notes"
+                    value={editForm.notes || ""}
+                    onChange={handleEditChange}
+                    rows={2}
+                  />
                 </div>
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setEditingId(null)} disabled={saving}>Cancel</button>
-                <button type="button" className="btn btn-primary" onClick={saveEdit} disabled={saving}>{saving ? "Saving..." : "Save"}</button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setEditingId(null)}
+                  disabled={saving}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={saveEdit}
+                  disabled={saving}
+                >
+                  {saving ? "Saving..." : "Save"}
+                </button>
               </div>
             </div>
           </div>
@@ -434,17 +546,41 @@ const DebtPage = () => {
 
       {/* Delete confirm modal */}
       {deleteId && (
-        <div className="modal d-block" style={{ background: "rgba(0,0,0,0.4)" }}>
+        <div
+          className="modal d-block"
+          style={{ background: "rgba(0,0,0,0.4)" }}
+        >
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">Delete debt</h5>
-                <button type="button" className="btn-close" onClick={() => setDeleteId(null)} disabled={saving} />
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setDeleteId(null)}
+                  disabled={saving}
+                />
               </div>
-              <div className="modal-body">Are you sure you want to delete this debt record?</div>
+              <div className="modal-body">
+                Are you sure you want to delete this debt record?
+              </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setDeleteId(null)} disabled={saving}>Cancel</button>
-                <button type="button" className="btn btn-danger" onClick={confirmDelete} disabled={saving}>{saving ? "Deleting..." : "Delete"}</button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setDeleteId(null)}
+                  disabled={saving}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={confirmDelete}
+                  disabled={saving}
+                >
+                  {saving ? "Deleting..." : "Delete"}
+                </button>
               </div>
             </div>
           </div>
@@ -455,4 +591,3 @@ const DebtPage = () => {
 };
 
 export default DebtPage;
-
