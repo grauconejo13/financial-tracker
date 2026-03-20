@@ -1,4 +1,5 @@
 import { useState } from "react";
+import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { saveCurrency } from "../api/currencyApi";
 
@@ -7,11 +8,10 @@ const CURRENCIES = [
   { code: "EUR", label: "🇪🇺 EUR – Euro" },
   { code: "GBP", label: "🇬🇧 GBP – British Pound" },
   { code: "JPY", label: "🇯🇵 JPY – Japanese Yen" },
-  { code: "CAD", label: "🇨🇦 CAD – Canadian Dollar" }
+  { code: "CAD", label: "🇨🇦 CAD – Canadian Dollar" },
 ];
 
 const CurrencySettingsPage = () => {
-
   const { token } = useAuth();
   const [currency, setCurrency] = useState("USD");
   const [saving, setSaving] = useState(false);
@@ -26,16 +26,19 @@ const CurrencySettingsPage = () => {
     try {
       await saveCurrency(currency, token);
       setMessage("Currency preference saved.");
-    } catch (e: any) {
-      setMessage(e?.response?.data?.message || "Failed to save currency");
+    } catch (e: unknown) {
+      if (axios.isAxiosError(e)) {
+        setMessage(e.response?.data?.message || "Failed to save currency");
+      } else {
+        setMessage("Failed to save currency");
+      }
     } finally {
-      setSaving(false);
+      setSaving(false); // ✅ FIX
     }
   };
 
   return (
     <div className="container py-4">
-
       <h2>Home Currency</h2>
 
       {message && <div className="alert alert-info">{message}</div>}
@@ -46,7 +49,9 @@ const CurrencySettingsPage = () => {
         <select
           className="form-select"
           value={currency}
-          onChange={(e) => setCurrency(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+            setCurrency(e.target.value)
+          }
         >
           {CURRENCIES.map((c) => (
             <option key={c.code} value={c.code}>
@@ -63,7 +68,6 @@ const CurrencySettingsPage = () => {
       >
         {saving ? "Saving..." : "Save Currency"}
       </button>
-
     </div>
   );
 };
