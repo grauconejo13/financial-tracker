@@ -1,16 +1,18 @@
-import express from "express";
-import cors from "cors";
-import morgan from "morgan";
-import bodyParser from "body-parser";
-import { errorHandler } from "./middleware/error.middleware";
-import transactionRoutes from "./routes/transaction.routes";
-import debtRoutes from "./routes/debt.routes";
-import authRoutes from "./routes/auth.routes";
-import incomeRoutes from "./routes/income.routes";
-import expenseRoutes from "./routes/expense.routes";
-import userRoutes from "./routes/user.routes";
-import templateRoutes from "./routes/template.routes";
-import goalRoutes from "./routes/goal.routes";
+import express from 'express';
+import cors from 'cors';
+import morgan from 'morgan';
+import bodyParser from 'body-parser';
+import { errorHandler } from './middleware/error.middleware';
+import transactionRoutes from './routes/transaction.routes';
+import debtRoutes from './routes/debt.routes';
+import authRoutes from './routes/auth.routes';
+import incomeRoutes from './routes/income.routes';
+import expenseRoutes from './routes/expense.routes';
+import userRoutes from './routes/user.routes';
+import templateRoutes from './routes/template.routes';
+import goalRoutes from './routes/goal.routes';
+import ghostRoutes from './routes/ghost.routes';
+import dashboardRoutes from './routes/dashboard.routes';
 
 const app = express();
 
@@ -33,7 +35,6 @@ app.get("/", (_req, res) => {
   res.send("ClearPath API is running");
 });
 
-
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
@@ -41,11 +42,13 @@ app.get("/health", (_req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/debts", debtRoutes);
+app.use("/api/income", incomeRoutes);
 app.use("/api/expense", expenseRoutes);
 app.use("/api/user", userRoutes);
-app.use("/api/income", incomeRoutes);
 app.use("/api/templates", templateRoutes);
 app.use("/api/goals", goalRoutes);
+app.use("/api/ghost", ghostRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 app.use(errorHandler);
 

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { HoverHint } from '../components/common/HoverHint';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -35,7 +36,10 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit}>
         {error && <div className="alert alert-danger">{error}</div>}
         <div className="mb-3">
-          <label className="form-label">Email</label>
+          <label className="form-label">
+            Email
+            <HoverHint text="Please enter your account email (for example: name@example.com)." />
+          </label>
           <input
             type="email"
             className="form-control"
@@ -45,7 +49,10 @@ export default function LoginPage() {
           />
         </div>
         <div className="mb-3">
-          <label className="form-label">Password</label>
+          <label className="form-label">
+            Password
+            <HoverHint text="Enter the password used when you created your account." />
+          </label>
           <input
             type="password"
             className="form-control"
@@ -54,7 +61,12 @@ export default function LoginPage() {
             required
           />
         </div>
-        <button type="submit" className="btn btn-primary w-100" disabled={loading}>
+        <button
+          type="submit"
+          className="btn btn-primary w-100"
+          disabled={loading}
+          title="Sign in to open your dashboard and CP analytics."
+        >
           {loading ? 'Signing in...' : 'Log in'}
         </button>
       </form>

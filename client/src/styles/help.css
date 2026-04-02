@@ -1,0 +1,48 @@
+.cp-hover-hint {
+  position: relative;
+  display: inline-flex;
+  margin-left: 0.45rem;
+  vertical-align: middle;
+  outline: none;
+}
+
+.cp-hover-hint__dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fff;
+  background: #5b5f97;
+  cursor: help;
+}
+
+.cp-hover-hint__bubble {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 220px;
+  max-width: 280px;
+  padding: 0.5rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid rgba(91, 95, 151, 0.25);
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.14);
+  color: #334155;
+  font-size: 0.76rem;
+  line-height: 1.35;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  z-index: 50;
+}
+
+.cp-hover-hint:hover .cp-hover-hint__bubble,
+.cp-hover-hint:focus-within .cp-hover-hint__bubble {
+  opacity: 1;
+  transform: translateY(0);
+}

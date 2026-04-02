@@ -1,20 +1,20 @@
-import { Request, Response } from "express";
-import { Expense } from "../models/expense.model";
-import { expenseCategories } from "../models/expenseCategories";
+import { Response, NextFunction } from 'express';
+import mongoose from 'mongoose';
+import { Expense } from '../models/expense.model.js';
+import { expenseCategories } from '../models/expenseCategories.js';
+import { AuthRequest } from '../middleware/auth.middleware.js';
 
-//let expenses: Expense[] = [];
-
-// Add expense
-export const addExpense = async (req: Request, res: Response) => {
+export const addExpense = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { amount, category, classification, reason, date } = req.body;
+    const userId = req.user!._id;
 
     if (!amount || amount <= 0) {
-      return res.status(400).json({ message: "Valid amount is required." });
+      return res.status(400).json({ message: 'Valid amount is required.' });
     }
 
     if (!category) {
-      return res.status(400).json({ message: "Category is required." });
+      return res.status(400).json({ message: 'Category is required.' });
     }
 
     if(!classification){
@@ -22,7 +22,7 @@ export const addExpense = async (req: Request, res: Response) => {
     }
 
     if (!expenseCategories.includes(category)) {
-      return res.status(400).json({ message: "Invalid category." });
+      return res.status(400).json({ message: 'Invalid category.' });
     }
 
     if (!["Necessary", "Avoidable"].includes(classification)){
@@ -30,14 +30,15 @@ export const addExpense = async (req: Request, res: Response) => {
     }
 
     if (!reason) {
-      return res.status(400).json({ message: "Reason is required." });
+      return res.status(400).json({ message: 'Reason is required.' });
     }
 
     if (!date) {
-      return res.status(400).json({ message: "Date is required." });
+      return res.status(400).json({ message: 'Date is required.' });
     }
 
-    const newExpense = new Expense ({
+    const newExpense = new Expense({
+      user: userId,
       amount,
       category,
       classification,
@@ -48,38 +49,44 @@ export const addExpense = async (req: Request, res: Response) => {
     await newExpense.save();
 
     res.status(201).json({
-      message: "Expense added successfully",
+      message: 'Expense added successfully',
       expense: newExpense,
     });
-
   } catch (error) {
-  console.error("Error adding expense: ", error);
-  res.status(500).json({ message: "Failed to add expense" });
+    next(error);
   }
 };
 
-  
-
-// View expenses
-export const viewExpenses = async (req: Request, res: Response) => {
+export const viewExpenses = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const expenses = await Expense.find();
+    const userId = req.user!._id;
+    const expenses = await Expense.find({ user: userId }).sort({ date: -1 });
     res.status(200).json(expenses);
   } catch (error) {
-    console.error("Error fetching expenses:", error);
-    res.status(500).json({ message: "Failed to fetch expenses" });
+    next(error);
   }
 };
 
-
-// Edit expense
-export const editExpense = async (req: Request, res: Response) => {
+export const editExpense = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    const userId = req.user!._id;
     const { id } = req.params;
     const { amount, category, classification, reason, date } = req.body;
 
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid expense id.' });
+    }
+
     if (category && !expenseCategories.includes(category)) {
-      return res.status(400).json({ message: "Invalid category." });
+      return res.status(400).json({ message: 'Invalid category.' });
+    }
+
+    const existing = await Expense.findById(id);
+    if (!existing) {
+      return res.status(404).json({ message: 'Expense not found.' });
+    }
+    if (existing.user.toString() !== userId) {
+      return res.status(403).json({ message: 'You are not allowed to edit this expense.' });
     }
 
     if (classification && !["Necessary", "Avoidable"].includes(classification)){
@@ -92,40 +99,39 @@ export const editExpense = async (req: Request, res: Response) => {
       { new: true }
     );
 
-    if (!updatedExpense) {
-      return res.status(404).json({ message: "Expense not found." });
-    }
-
     res.json({
-      message: "Expense updated successfully",
+      message: 'Expense updated successfully',
       expense: updatedExpense,
     });
-
   } catch (error) {
-    console.error("Error updating expense:", error);
-    res.status(500).json({ message: "Failed to update expense" });
+    next(error);
   }
 };
 
-
-// Delete expense
-export const deleteExpense = async (req: Request, res: Response) => {
+export const deleteExpense = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    const userId = req.user!._id;
     const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid expense id.' });
+    }
+
+    const existing = await Expense.findById(id);
+    if (!existing) {
+      return res.status(404).json({ message: 'Expense not found.' });
+    }
+    if (existing.user.toString() !== userId) {
+      return res.status(403).json({ message: 'You are not allowed to delete this expense.' });
+    }
 
     const deletedExpense = await Expense.findByIdAndDelete(id);
 
-    if (!deletedExpense) {
-      return res.status(404).json({ message: "Expense not found." });
-    }
-
     res.json({
-      message: "Expense deleted successfully",
+      message: 'Expense deleted successfully',
       expense: deletedExpense,
     });
-
   } catch (error) {
-    console.error("Error deleting expense:", error);
-    res.status(500).json({ message: "Failed to delete expense" });
+    next(error);
   }
 };

@@ -1,11 +1,11 @@
 import axios from "axios";
 import type { DashboardSummary } from "../types/dashboard.types";
 
-const API_URL = `${import.meta.env.VITE_API_URL}/dashboard/summary`;
+const API_URL = `${import.meta.env.VITE_API_URL}/api/dashboard/summary`;
 
 const getAuthHeaders = () => ({
   headers: {
-    Authorization: `Bearer ${localStorage.getItem("token") || localStorage.getItem("clearpath_token")}`,
+    Authorization: `Bearer ${localStorage.getItem("clearpath_token") || localStorage.getItem("token") || ""}`,
   },
 });
 

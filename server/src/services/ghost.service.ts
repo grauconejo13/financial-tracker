@@ -89,7 +89,7 @@ export function computeGhostMetrics(
 export interface Suggestion {
   title: string;
   detail: string;
-  kind: 'awareness' | 'habit' | 'summary';
+  kind: 'positive' | 'alert' | 'danger' | 'summary';
 }
 
 export interface CategoryHabitInsight {
@@ -100,6 +100,7 @@ export interface CategoryHabitInsight {
   headline: string;
   body: string;
   pulse: string;
+  tone: 'positive' | 'alert' | 'danger';
 }
 
 function periodLinesForCategory(cat: string, windows: PeriodWindow[]): string {
@@ -132,51 +133,61 @@ function habitCopyForCategory(
   modeled: number,
   currency: string,
   windows: PeriodWindow[]
-): { headline: string; body: string; pulse: string } {
+): { headline: string; body: string; pulse: string; tone: 'positive' | 'alert' | 'danger' } {
   const pct = actual > 0 ? Math.round((gap / actual) * 100) : 0;
   const gapStr = gap.toFixed(2);
   const periodBlock = periodLinesForCategory(cat, windows);
+  const tone: 'positive' | 'alert' | 'danger' =
+    pct <= 8 ? 'positive' : pct <= 22 ? 'alert' : 'danger';
 
-  const blocks: Record<string, () => { headline: string; body: string; pulse: string }> = {
+  const blocks: Record<string, () => { headline: string; body: string; pulse: string; tone: 'positive' | 'alert' | 'danger' }> = {
     Food: () => ({
       headline: 'Food: pace vs last week / last month',
       body: `All-time spend in Food: ${actual.toFixed(2)} ${currency}; ghost compares that to a leaner pattern (about ${pct}% could shift). ${periodBlock ? `Time comparison: ${periodBlock}` : 'Log dates on expenses to unlock week-over-week and month-to-date comparisons.'}`,
       pulse: 'Meals & groceries',
+      tone,
     }),
     Transport: () => ({
       headline: 'Transport: trips vs your earlier weeks',
       body: `Spend ${actual.toFixed(2)} ${currency} vs modeled ${modeled.toFixed(2)} ${currency}. ${periodBlock ? periodBlock : 'Add dated trips to see if this week outran last week.'}`,
       pulse: 'Commute & rides',
+      tone,
     }),
     Rent: () => ({
       headline: 'Rent: mostly fixed',
       body: `Rent is modeled as inflexible; small gaps are usually timing. ${periodBlock}`,
       pulse: 'Housing',
+      tone,
     }),
     Utilities: () => ({
       headline: 'Utilities: usage vs prior month',
       body: `Actual ${actual.toFixed(2)} ${currency} vs modeled ${modeled.toFixed(2)} ${currency}. ${periodBlock}`,
       pulse: 'Bills',
+      tone,
     }),
     Entertainment: () => ({
       headline: 'Entertainment: nights out vs your baseline',
       body: `Higher discretionary spend here widens the ghost gap (${gapStr} ${currency}). ${periodBlock ? `If entries jumped (e.g. more movie or event nights than last month), treat it like dialing from three outings down to one — not “savings hacks,” just matching your calmer weeks.` : 'Use dated entries so we can compare this month to the same days last month.'}`,
       pulse: 'Nights & tickets',
+      tone,
     }),
     Healthcare: () => ({
       headline: 'Healthcare',
       body: `Modeled close to actual. ${periodBlock}`,
       pulse: 'Essentials',
+      tone,
     }),
     Education: () => ({
       headline: 'Education',
       body: `Course-related spend. ${periodBlock}`,
       pulse: 'School costs',
+      tone,
     }),
     Other: () => ({
       headline: 'Other: mixed charges',
       body: `Catch-all category; ghost trims a portion. ${periodBlock}`,
       pulse: 'Misc',
+      tone,
     }),
   };
 
@@ -209,12 +220,13 @@ export function buildCategoryHabitInsights(
       headline: copy.headline,
       body: copy.body,
       pulse: copy.pulse,
+      tone: copy.tone,
     });
   }
   return out;
 }
 
-function cutbackHint(
+function categorizeDelta(
   cat: string,
   d: {
     currentTotal: number;
@@ -225,27 +237,57 @@ function cutbackHint(
   curLabel: string,
   prevLabel: string,
   currency: string
-): string | null {
+): { kind: 'positive' | 'alert' | 'danger'; detail: string } | null {
   const up = d.previousTotal > 0 && d.currentTotal > d.previousTotal;
+  const down = d.previousTotal > 0 && d.currentTotal < d.previousTotal;
   const more = d.currentEntries > d.previousEntries && d.previousEntries > 0;
+  const less = d.currentEntries < d.previousEntries && d.previousEntries > 0;
+  const increaseRatio = d.previousTotal > 0 ? d.currentTotal / d.previousTotal : 1;
+  const decreaseRatio = d.previousTotal > 0 ? d.currentTotal / d.previousTotal : 1;
+
+  if (down && (decreaseRatio <= 0.92 || less)) {
+    return {
+      kind: 'positive',
+      detail: `${cat} improved ${curLabel} (${d.currentTotal.toFixed(2)} ${currency}) vs ${prevLabel} (${d.previousTotal.toFixed(2)} ${currency}). Great control — keep this pace and route the difference to savings.`,
+    };
+  }
+
   if (!up && !more) return null;
 
   if (cat === 'Entertainment') {
     if (more) {
-      return `You logged ${d.currentEntries} entertainment entries ${curLabel} vs ${d.previousEntries} ${prevLabel} — more nights out than your calmer stretch. One fewer outing this month often matches last month’s pace.`;
+      return {
+        kind: d.currentEntries - d.previousEntries >= 2 ? 'danger' : 'alert',
+        detail: `You logged ${d.currentEntries} entertainment entries ${curLabel} vs ${d.previousEntries} ${prevLabel} — more nights out than your calmer stretch. Try one fewer outing and move that amount to savings.`,
+      };
     }
-    return `Entertainment is higher ${curLabel} (${d.currentTotal.toFixed(2)} ${currency}) than ${prevLabel} (${d.previousTotal.toFixed(2)} ${currency}). Think one less movie or ticket night compared to the heavier stretch.`;
+    return {
+      kind: increaseRatio >= 1.25 ? 'danger' : 'alert',
+      detail: `Entertainment is higher ${curLabel} (${d.currentTotal.toFixed(2)} ${currency}) than ${prevLabel} (${d.previousTotal.toFixed(2)} ${currency}). Cut one movie/ticket event and transfer the saved amount.`,
+    };
   }
   if (cat === 'Food') {
-    return `Food ran higher ${curLabel} (${d.currentTotal.toFixed(2)} ${currency}) than ${prevLabel} (${d.previousTotal.toFixed(2)} ${currency}). One fewer delivery or dine-out per week mirrors your lighter weeks.`;
+    return {
+      kind: increaseRatio >= 1.2 ? 'danger' : 'alert',
+      detail: `Food ran higher ${curLabel} (${d.currentTotal.toFixed(2)} ${currency}) than ${prevLabel} (${d.previousTotal.toFixed(2)} ${currency}). One fewer delivery/dine-out each week can redirect money to savings.`,
+    };
   }
   if (cat === 'Transport') {
-    return `Transport is up ${curLabel} vs ${prevLabel}. Fewer discretionary trips—or one less ride-hail weekend—gets closer to your prior week’s pattern.`;
+    return {
+      kind: increaseRatio >= 1.2 ? 'danger' : 'alert',
+      detail: `Transport is up ${curLabel} vs ${prevLabel}. Reduce discretionary rides and route the difference to debt payoff or savings.`,
+    };
   }
   if (cat === 'Other') {
-    return `“Other” spend is up ${curLabel} vs ${prevLabel}. A quick pass on small subscriptions or impulse buys usually pulls this back toward last month.`;
+    return {
+      kind: increaseRatio >= 1.2 ? 'danger' : 'alert',
+      detail: `“Other” spend is up ${curLabel} vs ${prevLabel}. Cancel one small subscription or impulse purchase category this cycle.`,
+    };
   }
-  return `${cat} is higher ${curLabel} (${d.currentTotal.toFixed(2)} ${currency}) than ${prevLabel} (${d.previousTotal.toFixed(2)} ${currency}). Trim frequency first so it feels like a habit tweak, not a savings goal.`;
+  return {
+    kind: increaseRatio >= 1.25 ? 'danger' : 'alert',
+    detail: `${cat} is higher ${curLabel} (${d.currentTotal.toFixed(2)} ${currency}) than ${prevLabel} (${d.previousTotal.toFixed(2)} ${currency}). Trim frequency and redirect the difference to savings.`,
+  };
 }
 
 export function buildSpendingAwarenessSuggestions(
@@ -268,18 +310,18 @@ export function buildSpendingAwarenessSuggestions(
 
   for (const w of windows) {
     for (const d of w.deltas) {
-      const hint = cutbackHint(
+      const verdict = categorizeDelta(
         d.category,
         d,
         w.currentLabel,
         w.previousLabel,
         currency
       );
-      if (!hint) continue;
+      if (!verdict) continue;
       out.push({
         title: `${d.category}: ${w.id === 'week' ? 'week over week' : 'month vs last month'}`,
-        detail: hint,
-        kind: 'awareness',
+        detail: verdict.detail,
+        kind: verdict.kind,
       });
     }
   }

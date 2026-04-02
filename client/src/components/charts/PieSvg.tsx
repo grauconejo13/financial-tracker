@@ -3,6 +3,7 @@ import { useMemo, useState, useCallback } from "react";
 export interface PieSlice {
   name: string;
   value: number;
+  hint?: string;
 }
 
 interface PieSvgProps {
@@ -49,14 +50,14 @@ export function PieSvg({
   const { paths, total } = useMemo(() => {
     const filtered = data.filter((d) => d.value > 0);
     const sum = filtered.reduce((a, b) => a + b.value, 0);
-    if (sum <= 0) return { paths: [] as { d: string; name: string; value: number; color: string }[], total: 0 };
+    if (sum <= 0) return { paths: [] as { d: string; name: string; value: number; color: string; hint?: string }[], total: 0 };
 
     let angle = -Math.PI / 2;
     const cx = size / 2;
     const cy = size / 2;
     const rOuter = size * 0.38;
     const rInner = rOuter * innerRatio;
-    const out: { d: string; name: string; value: number; color: string }[] = [];
+    const out: { d: string; name: string; value: number; color: string; hint?: string }[] = [];
 
     filtered.forEach((slice, i) => {
       const sweep = (slice.value / sum) * Math.PI * 2;
@@ -67,6 +68,7 @@ export function PieSvg({
         name: slice.name,
         value: slice.value,
         color: colors[i % colors.length],
+        hint: slice.hint,
       });
       angle = end;
     });
@@ -119,6 +121,7 @@ export function PieSvg({
               <>
                 <div className="pie-hover-floater__segment">{active.name}</div>
                 <div className="pie-hover-floater__value">{formatValue(active.value)}</div>
+                {active.hint && <div className="small text-muted mt-1">{active.hint}</div>}
               </>
             )}
           </div>

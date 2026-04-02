@@ -43,19 +43,22 @@ function Layout({ children }: LayoutProps) {
   {token && (
     <>
       <li className="nav-item">
-        <Link className="nav-link" to="/dashboard">Dashboard</Link>
+        <Link className="nav-link" to="/dashboard" title="Dashboard summary, savings, debt, and spending charts.">Dashboard</Link>
       </li>
       <li className="nav-item">
         <Link className="nav-link" to="/budget">Budget</Link>
       </li>
       <li className="nav-item">
-        <Link className="nav-link" to="/ghost">Ghost</Link>
+        <Link className="nav-link" to="/ghost" title="Real vs Ghost comparison and spending habit insights.">Ghost</Link>
       </li>
       <li className="nav-item">
         <Link className="nav-link" to="/income">Income</Link>
       </li>
       <li className="nav-item">
-        <Link className="nav-link" to="/transactions">Transactions</Link>
+        <Link className="nav-link" to="/expense">Expense</Link>
+      </li>
+      <li className="nav-item">
+        <Link className="nav-link" to="/transactions" title="Unified transaction ledger for edit/delete tracking.">Transactions</Link>
       </li>
       <li className="nav-item">
         <Link className="nav-link" to="/debts">Debts</Link>
@@ -68,7 +71,11 @@ function Layout({ children }: LayoutProps) {
               <span className="nav-link">{user?.email}</span>
             </li>
             <li className="nav-item">
-              <button className="btn btn-outline-light btn-sm ms-1" onClick={handleLogout}>
+              <button
+                className="btn btn-outline-light btn-sm ms-1"
+                onClick={handleLogout}
+                title="Log out securely from your current session."
+              >
                 Logout
               </button>
             </li>

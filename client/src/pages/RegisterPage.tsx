@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { HoverHint } from '../components/common/HoverHint';
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
@@ -31,7 +32,10 @@ export default function RegisterPage() {
       <form onSubmit={handleSubmit}>
         {error && <div className="alert alert-danger">{error}</div>}
         <div className="mb-3">
-          <label className="form-label">Email</label>
+          <label className="form-label">
+            Email
+            <HoverHint text="Use a valid email address. This will be your login ID." />
+          </label>
           <input
             type="email"
             className="form-control"
@@ -41,7 +45,10 @@ export default function RegisterPage() {
           />
         </div>
         <div className="mb-3">
-          <label className="form-label">Password (min 6 characters)</label>
+          <label className="form-label">
+            Password (min 6 characters)
+            <HoverHint text="Create a secure password with at least 6 characters." />
+          </label>
           <input
             type="password"
             className="form-control"
@@ -51,7 +58,12 @@ export default function RegisterPage() {
             required
           />
         </div>
-        <button type="submit" className="btn btn-primary w-100" disabled={loading}>
+        <button
+          type="submit"
+          className="btn btn-primary w-100"
+          disabled={loading}
+          title="Create your account and continue to login."
+        >
           {loading ? 'Creating account...' : 'Create account'}
         </button>
       </form>

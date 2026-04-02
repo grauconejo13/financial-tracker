@@ -49,7 +49,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
       return res.status(400).json({ message: 'Email and password are required' });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
@@ -100,3 +100,40 @@ export const me = async (req: AuthRequest, res: Response, next: NextFunction) =>
   }
 };
 
+export async function updateProfile(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { savingsGoalLabel, savingsGoalTarget } = req.body as {
+      savingsGoalLabel?: string;
+      savingsGoalTarget?: number | null;
+    };
+
+    const user = await User.findById(req.user!._id);
+    if (!user) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+
+    if (savingsGoalLabel !== undefined) {
+      user.savingsGoalLabel = String(savingsGoalLabel).trim().slice(0, 100);
+    }
+    if (savingsGoalTarget !== undefined) {
+      user.savingsGoalTarget =
+        savingsGoalTarget === null || Number(savingsGoalTarget) <= 0
+          ? undefined
+          : Number(savingsGoalTarget);
+    }
+
+    await user.save();
+    res.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        savingsGoalLabel: user.savingsGoalLabel || '',
+        savingsGoalTarget: user.savingsGoalTarget
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+}

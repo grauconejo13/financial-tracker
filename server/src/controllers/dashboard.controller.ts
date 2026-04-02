@@ -6,13 +6,19 @@ import { User } from '../models/User.model.js';
 import { expenseCategories } from '../models/expenseCategories.js';
 import { computeGhostMetrics, ExpenseRow } from '../services/ghost.service.js';
 
+function isInCurrentMonth(value: unknown, now: Date): boolean {
+  const d = new Date(String(value));
+  if (isNaN(d.getTime())) return false;
+  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+}
+
 export async function getDashboardSummary(
   req: AuthRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> {
   try {
-    const uid = req.user!.id;
+    const uid = req.user!._id;
     const [expenses, incomes, user] = await Promise.all([
       Expense.find({ user: uid }).lean(),
       Income.find({ user: uid }).lean(),
@@ -26,6 +32,13 @@ export async function getDashboardSummary(
 
     const totalIncome = incomes.reduce((s, i) => s + Math.max(0, i.amount), 0);
     const totalExpense = expenseRows.reduce((s, e) => s + Math.max(0, e.amount), 0);
+    const now = new Date();
+    const monthIncome = incomes
+      .filter((i) => isInCurrentMonth(i.date, now))
+      .reduce((s, i) => s + Math.max(0, i.amount), 0);
+    const monthExpense = expenses
+      .filter((e) => isInCurrentMonth(e.date, now))
+      .reduce((s, e) => s + Math.max(0, e.amount), 0);
 
     const byCategory: Record<string, number> = {};
     for (const c of expenseCategories) byCategory[c] = 0;
@@ -39,8 +52,8 @@ export async function getDashboardSummary(
       .filter((x) => x.value > 0);
 
     const incomeVsExpense = [
-      { name: 'Income', value: Math.round(totalIncome * 100) / 100 },
-      { name: 'Expenses', value: Math.round(totalExpense * 100) / 100 },
+      { name: 'Income', value: Math.round(monthIncome * 100) / 100 },
+      { name: 'Expenses', value: Math.round(monthExpense * 100) / 100 },
     ];
 
     const metrics = computeGhostMetrics(expenseRows, incomes.map((i) => ({ amount: i.amount })));
@@ -61,6 +74,13 @@ export async function getDashboardSummary(
         expenses: Math.round(totalExpense * 100) / 100,
         net: Math.round((totalIncome - totalExpense) * 100) / 100,
       },
+      periods: {
+        currentMonth: {
+          income: Math.round(monthIncome * 100) / 100,
+          expenses: Math.round(monthExpense * 100) / 100,
+          net: Math.round((monthIncome - monthExpense) * 100) / 100,
+        },
+      },
       ghost: {
         realBalance: Math.round(metrics.realBalance * 100) / 100,
         ghostBalance: Math.round(metrics.ghostBalance * 100) / 100,
@@ -74,3 +94,4 @@ export async function getDashboardSummary(
     next(err);
   }
 }
+

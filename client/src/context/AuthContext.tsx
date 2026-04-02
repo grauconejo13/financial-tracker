@@ -32,7 +32,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const loadUser = useCallback(async () => {
-    const t = localStorage.getItem(TOKEN_KEY);
+    const legacy = localStorage.getItem("token");
+    const t = localStorage.getItem(TOKEN_KEY) || legacy;
 
     if (!t) {
       setUser(null);
@@ -43,6 +44,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       setToken(t); // 👈 set early
+      if (legacy && !localStorage.getItem(TOKEN_KEY)) {
+        localStorage.setItem(TOKEN_KEY, legacy);
+      }
+      localStorage.removeItem("token");
 
       const { user: u } = await authApi.getCurrentUser(t);
       setUser(u);
@@ -63,6 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     const { user: u, token: t } = await authApi.login(email, password);
     localStorage.setItem(TOKEN_KEY, t);
+    localStorage.removeItem("token");
     localStorage.setItem(USER_KEY, JSON.stringify(u));
     setToken(t);
     setUser(u);
@@ -81,6 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem("token");
     localStorage.removeItem(USER_KEY);
     setToken(null);
     setUser(null);

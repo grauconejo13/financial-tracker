@@ -1,10 +1,10 @@
 import axios from "axios";
 
-const API_URL = `${import.meta.env.VITE_API_URL}/expense`;
+const API_URL = `${import.meta.env.VITE_API_URL}/api/expense`;
 
 const getAuthHeaders = () => ({
   headers: {
-    Authorization: `Bearer ${localStorage.getItem("token")}`,
+    Authorization: `Bearer ${localStorage.getItem("clearpath_token") || localStorage.getItem("token") || ""}`,
   },
 });
 
@@ -18,7 +18,7 @@ export interface ExpenseRequest {
 
 export const addExpense = async (data: ExpenseRequest) => {
   try {
-    const response = await axios.post(API_URL, data);
+    const response = await axios.post(API_URL, data, getAuthHeaders());
     return response.data;
   } catch (error: unknown) {
     if (axios.isAxiosError(error)) {
