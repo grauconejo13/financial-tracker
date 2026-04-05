@@ -36,6 +36,11 @@ function StudentDashboard() {
       title: "Debts",
       description: "Track what you owe",
       route: "/debts"
+    },
+    {
+      title: "Savings",
+      description: "Manage your savings and goals",
+      route: "/savings"
     }
   ];
 
