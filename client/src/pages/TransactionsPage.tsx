@@ -14,6 +14,8 @@ const TransactionsPage = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [sortBy, setSortBy] = useState<"date" | "amount">("date");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   useEffect(() => {
     const load = async () => {
@@ -57,12 +59,59 @@ const TransactionsPage = () => {
 
   if (loading) return <div className="container py-4">Loading transactions...</div>;
 
+  const totalIncome = transactions
+    .filter((t) => t.type === "income")
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const totalExpense = transactions
+    .filter((t) => t.type === "expense")
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const sortedTransactions = [...transactions].sort((a, b) => {
+    if (sortBy === "date"){
+      const aDate = new Date(a.createdAt).getTime();
+      const bDate = new Date(b.createdAt).getTime();
+      return sortOrder === "asc" ? aDate - bDate : bDate - aDate;
+    } else {
+      return sortOrder === "asc"
+        ? a.amount - b.amount
+        : b.amount - a.amount;
+    }
+  });
+
   return (
     <div className="container py-4">
       <h2>Transactions</h2>
+
+      <div className="mb-3">
+        <h5 className="text-success">Income: ${totalIncome.toFixed(2)}</h5>
+        <h5 className="text-danger">Expenses: ${totalExpense.toFixed(2)}</h5>
+        <h5>Net: ${(totalIncome - totalExpense).toFixed(2)}</h5>
+      </div>
+
+      <div className="d-flex gap-2 mb-3">
+        <select
+          className="form-select w-auto"
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as "date" | "amount")}
+        >
+          <option value="date">Sort by Date</option>
+          <option value="amount">Sort by Amount</option>
+        </select>
+
+        <select
+          className="form-select w-auto"
+          value={sortOrder}
+          onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
+        >
+          <option value="desc">Descending</option>
+          <option value="asc">Ascending</option>
+        </select>
+      </div>
+
       {error && <div className="alert alert-danger">{error}</div>}
       {transactions.length === 0 ? (
-        <p>No transactions yet.</p>
+        <p>No transactions yet. Start by adding income or expenses.</p>
       ) : (
         <table className="table">
           <thead>
@@ -76,13 +125,13 @@ const TransactionsPage = () => {
             </tr>
           </thead>
           <tbody>
-            {transactions.map((t, index) => (
+            {sortedTransactions.map((t, index) => (
               <tr key={t._id}>
                 <td>{index + 1}</td>
                 <td>{new Date(t.createdAt).toLocaleDateString()}</td>
                 <td>{t.type}</td>
                 <td>{t.description}</td>
-                <td>{t.amount}</td>
+                <td>${t.amount.toFixed(2)}</td>
                 <td>
                   <button
                     className="btn btn-sm btn-outline-danger"

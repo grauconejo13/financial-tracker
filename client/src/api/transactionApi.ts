@@ -17,7 +17,6 @@ export const getTransactions = async (
   token?: string,
 ): Promise<Transaction[]> => {
   const authToken = token || localStorage.getItem("clearpath_token");
-
   if (!authToken) {
     throw new Error("No auth token found");
   }
@@ -29,7 +28,10 @@ export const getTransactions = async (
       },
     });
 
-    return res.data.transactions;
+    return res.data.transactions.map((t) =>({
+      ...t,
+      amount: Number(parseFloat(String(t.amount)).toFixed(2)),
+    }));
   } catch (error) {
     console.error("Failed to fetch transactions:", error);
     return []; // 👈 prevents crash
@@ -46,7 +48,13 @@ export const editTransaction = async (
   },
   token: string,
 ): Promise<void> => {
-  await axios.put(`${API_URL}/${id}`, data, {
+  await axios.put(`${API_URL}/${id}`, {
+    ...data,
+    amount:
+      data.amount !== undefined
+        ? Number(parseFloat(String(data.amount)).toFixed(2))
+      : undefined,
+    },{
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
