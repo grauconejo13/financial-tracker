@@ -1,3 +1,5 @@
+console.log("Attempting to redeploy changed files on render");
+
 import app from './app';
 import { ENV } from './config/env';
 import { connectDB } from './config/db';
