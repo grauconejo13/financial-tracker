@@ -160,6 +160,39 @@ export const updateDebt = async (
   }
 };
 
+export const makePayment = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const user = req.user;
+    if (!user) return res.status(401).json({ message: 'Unauthenticated' });
+
+    const { id } = req.params;
+    const { amount } = req.body as { amount?: number };
+
+    if (!amount || Number(amount) <= 0) {
+      return res.status(400).json({ errors: ['Payment amount must be greater than 0'] });
+    }
+
+    const debt = await Debt.findOne({ _id: id, user: user._id });
+    if (!debt) return res.status(404).json({ message: 'Debt not found' });
+
+    const newPaid = (debt.paidAmount || 0) + Number(amount);
+    if (newPaid > debt.amount) {
+      return res.status(400).json({ errors: ['Payment exceeds remaining debt balance'] });
+    }
+
+    debt.paidAmount = newPaid;
+    await debt.save();
+
+    return res.json({ debt });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const deleteDebt = async (
   req: AuthRequest,
   res: Response,
@@ -179,4 +212,3 @@ export const deleteDebt = async (
     next(err);
   }
 };
-

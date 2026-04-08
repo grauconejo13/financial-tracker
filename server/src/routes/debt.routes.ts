@@ -6,8 +6,8 @@ const router = Router();
 
 router.get('/', authenticate, debtController.getMyDebts);
 router.post('/', authenticate, debtController.createDebt);
+router.post('/:id/pay', authenticate, debtController.makePayment);
 router.put('/:id', authenticate, debtController.updateDebt);
 router.delete('/:id', authenticate, debtController.deleteDebt);
 
 export default router;
-

@@ -5,6 +5,7 @@ export interface IDebt extends Document {
   label: string;
   counterparty?: string;
   amount: number;
+  paidAmount: number;
   currency: string;
   direction: 'owed_by_me' | 'owed_to_me';
   dueDate?: Date;
@@ -19,6 +20,7 @@ const DebtSchema = new Schema<IDebt>(
     label: { type: String, required: true, trim: true },
     counterparty: { type: String, trim: true },
     amount: { type: Number, required: true, min: 0.01 },
+    paidAmount: { type: Number, default: 0, min: 0 },
     currency: { type: String, default: 'LKR' },
     direction: {
       type: String,
@@ -32,4 +34,3 @@ const DebtSchema = new Schema<IDebt>(
 );
 
 export const Debt = model<IDebt>('Debt', DebtSchema);
-

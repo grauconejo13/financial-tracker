@@ -29,6 +29,7 @@ export interface Goal {
   _id: string;
   name: string;
   targetAmount: number;
+  contributedAmount: number;
   deadline: string;
   templateType?: string;
   fields?: GoalField[];
@@ -82,5 +83,15 @@ export const deleteGoal = async (id: string): Promise<GoalResponse> => {
     return res.data;
   } catch (error: any) {
     throw error.response?.data?.message || "Failed to delete goal";
+  }
+};
+
+// Contribute to goal
+export const contributeToGoal = async (id: string, amount: number): Promise<{ message: string; goal: Goal }> => {
+  try {
+    const res = await axios.post(`${API_URL}/${id}/contribute`, { amount });
+    return res.data;
+  } catch (error: any) {
+    throw error.response?.data?.message || "Failed to contribute to goal";
   }
 };

@@ -9,6 +9,7 @@ const goalSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
     targetAmount: { type: Number, required: true },
+    contributedAmount: { type: Number, default: 0, min: 0 },
     deadline: { type: Date, required: true },
 
     templateType: {
@@ -17,7 +18,7 @@ const goalSchema = new mongoose.Schema(
       default: null
     },
 
-    fields: [goalFieldSchema]  
+    fields: [goalFieldSchema]
   },
   { timestamps: true }
 );

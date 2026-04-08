@@ -8,6 +8,7 @@ export interface Debt {
   label: string;
   counterparty?: string;
   amount: number;
+  paidAmount: number;
   currency: string;
   direction: "owed_by_me" | "owed_to_me";
   dueDate?: string;
@@ -62,3 +63,12 @@ export const deleteDebt = async (id: string, token: string): Promise<void> => {
   });
 };
 
+export const payDebt = async (id: string, amount: number, token: string): Promise<Debt> => {
+  const res = await axios.post<{ debt: Debt }>(`${API_URL}/${id}/pay`, { amount }, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    }
+  });
+  return res.data.debt;
+};
