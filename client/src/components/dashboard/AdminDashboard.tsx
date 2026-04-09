@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 function AdminDashboard() {
   return (
     <div className="container py-4" style={{ background: "var(--bg)" }}>
@@ -5,14 +7,14 @@ function AdminDashboard() {
         Admin Dashboard
       </h2>
 
+      {/* 📊 STATS CARDS */}
       <div className="row g-3 mb-4">
-
         <div className="col-md-4">
           <div
             className="card shadow-sm text-center"
             style={{
               borderRadius: "12px",
-              borderLeft: "5px solid var(--primary)"
+              borderLeft: "5px solid var(--primary)",
             }}
           >
             <div className="card-body">
@@ -27,7 +29,7 @@ function AdminDashboard() {
             className="card shadow-sm text-center"
             style={{
               borderRadius: "12px",
-              borderLeft: "5px solid var(--accent)"
+              borderLeft: "5px solid var(--accent)",
             }}
           >
             <div className="card-body">
@@ -42,7 +44,7 @@ function AdminDashboard() {
             className="card shadow-sm text-center"
             style={{
               borderRadius: "12px",
-              borderLeft: "5px solid var(--secondary)"
+              borderLeft: "5px solid var(--secondary)",
             }}
           >
             <div className="card-body">
@@ -51,18 +53,61 @@ function AdminDashboard() {
             </div>
           </div>
         </div>
-
       </div>
 
+      {/* ⚙️ ADMIN ACTIONS */}
+      <div className="row g-3 mb-4">
+        <div className="col-md-6">
+          <Link to="/admin/categories" style={{ textDecoration: "none" }}>
+            <div
+              className="card shadow-sm text-center"
+              style={{
+                borderRadius: "12px",
+                cursor: "pointer",
+                borderLeft: "5px solid var(--primary)",
+              }}
+            >
+              <div className="card-body">
+                <h5 style={{ color: "var(--text)" }}>Manage Categories</h5>
+                <p style={{ color: "var(--secondary)" }}>
+                  Add, edit, or remove expense & income categories
+                </p>
+              </div>
+            </div>
+          </Link>
+        </div>
+
+        <div className="col-md-6">
+          <Link to="/admin/templates" style={{ textDecoration: "none" }}>
+            <div
+              className="card shadow-sm text-center"
+              style={{
+                borderRadius: "12px",
+                cursor: "pointer",
+                borderLeft: "5px solid var(--accent)",
+              }}
+            >
+              <div className="card-body">
+                <h5 style={{ color: "var(--text)" }}>Manage Templates</h5>
+                <p style={{ color: "var(--secondary)" }}>
+                  Create and update savings or financial templates
+                </p>
+              </div>
+            </div>
+          </Link>
+        </div>
+      </div>
+
+      {/* 📢 INFO */}
       <div
         className="alert"
         style={{
           background: "var(--bg)",
           border: "1px solid var(--accent)",
-          color: "var(--text)"
+          color: "var(--text)",
         }}
       >
-        Admin tools and user management will appear here.
+        Select an admin tool above to manage system data.
       </div>
     </div>
   );

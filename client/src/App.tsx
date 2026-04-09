@@ -17,6 +17,8 @@ import TransactionsPage from "./pages/TransactionsPage";
 import DebtPage from "./pages/DebtPage";
 import CurrencySettingsPage from "./pages/CurrencySettingsPage";
 import SavingsPage from "./pages/SavingsPage";
+import CategoryPage from "./pages/CategoryPage";
+import TemplatePage from "./pages/TemplatePage";
 
 function App() {
   return (
@@ -27,16 +29,88 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
-            <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-            <Route path="/budget" element={<ProtectedRoute><BudgetPage /></ProtectedRoute>} />
-            <Route path="/ghost" element={<ProtectedRoute><GhostPage /></ProtectedRoute>} />
-            <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
-            <Route path="/income" element={<ProtectedRoute><IncomePage /></ProtectedRoute>} />
-            <Route path="/expense" element={<ProtectedRoute><ExpensePage /></ProtectedRoute>} />
-            <Route path="/transactions" element={<ProtectedRoute><TransactionsPage /></ProtectedRoute>} />
-            <Route path="/debts" element={<ProtectedRoute><DebtPage /></ProtectedRoute>} />
-            <Route path="/currency-settings" element={<ProtectedRoute><CurrencySettingsPage /></ProtectedRoute>} />
-            <Route path="/savings" element={<ProtectedRoute><SavingsPage /></ProtectedRoute>}/>
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/budget"
+              element={
+                <ProtectedRoute>
+                  <BudgetPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/ghost"
+              element={
+                <ProtectedRoute>
+                  <GhostPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/income"
+              element={
+                <ProtectedRoute>
+                  <IncomePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/expense"
+              element={
+                <ProtectedRoute>
+                  <ExpensePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/transactions"
+              element={
+                <ProtectedRoute>
+                  <TransactionsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/debts"
+              element={
+                <ProtectedRoute>
+                  <DebtPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/currency-settings"
+              element={
+                <ProtectedRoute>
+                  <CurrencySettingsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/savings"
+              element={
+                <ProtectedRoute>
+                  <SavingsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/admin/categories" element={<CategoryPage />} />
+            <Route path="/admin/templates" element={<TemplatePage />} />
           </Routes>
         </Layout>
       </Router>

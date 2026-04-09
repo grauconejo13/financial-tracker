@@ -6,5 +6,5 @@ export const expenseCategories = [
   "Entertainment",
   "Healthcare",
   "Education",
-  "Other"
+  "Other",
 ];

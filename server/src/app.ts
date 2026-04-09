@@ -12,6 +12,8 @@ import userRoutes from "./routes/user.routes";
 import templateRoutes from "./routes/template.routes";
 import goalRoutes from "./routes/goal.routes";
 import savingsRoutes from "./routes/savings.routes";
+import categoryRoutes from "./routes/admin.category.routes";
+import adminTemplateRoutes from "./routes/admin.template.routes";
 
 const app = express();
 
@@ -21,7 +23,7 @@ app.use(
       "http://localhost:5173",
       "https://financial-tracker-kappa-wine.vercel.app",
     ],
-     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
   }),
 );
@@ -33,7 +35,6 @@ app.use(morgan("dev"));
 app.get("/", (_req, res) => {
   res.send("ClearPath API is running");
 });
-
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
@@ -48,6 +49,8 @@ app.use("/api/income", incomeRoutes);
 app.use("/api/templates", templateRoutes);
 app.use("/api/goals", goalRoutes);
 app.use("/api/savings", savingsRoutes);
+app.use("/api/admin/categories", categoryRoutes);
+app.use("/api/admin/templates", adminTemplateRoutes);
 
 app.use(errorHandler);
 
