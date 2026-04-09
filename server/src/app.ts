@@ -1,8 +1,7 @@
 import express from "express";
-import cors from "cors";
 import morgan from "morgan";
 import bodyParser from "body-parser";
-import { corsOptions } from "./config/corsOptions";
+import { corsMiddleware } from "./config/corsOptions";
 import { errorHandler } from "./middleware/error.middleware";
 import transactionRoutes from "./routes/transaction.routes";
 import debtRoutes from "./routes/debt.routes";
@@ -19,8 +18,7 @@ import templateRoutes from "./routes/template.routes";
 
 const app = express();
 
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+app.use(corsMiddleware);
 /** Profile updates can include base64 avatars; default ~100kb is too small */
 app.use(bodyParser.json({ limit: "2mb" }));
 app.use(bodyParser.urlencoded({ extended: true, limit: "2mb" }));

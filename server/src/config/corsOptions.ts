@@ -1,10 +1,8 @@
-import type { CorsOptions } from 'cors';
+import type { Request, Response, NextFunction } from 'express';
 import { ENV } from './env';
 
 /**
- * Static allowlist + env (CORS_ORIGINS) + any Vercel deployment (*.vercel.app)
- * so POST/PUT from production and preview URLs work without redeploying the API
- * for every new preview subdomain.
+ * Static allowlist + env (CORS_ORIGINS) + any *.vercel.app host.
  */
 const STATIC = new Set([
   'http://localhost:5173',
@@ -13,9 +11,14 @@ const STATIC = new Set([
   ...ENV.CORS_ORIGINS
 ]);
 
-const VERCEL_APP = /^https:\/\/[a-z0-9-]+\.vercel\.app$/i;
+/** Any deployment on Vercel (prod, previews, branch URLs). */
+const VERCEL_APP = /^https:\/\/[^\s/]+\.vercel\.app$/i;
 const LOCALHOST = /^http:\/\/localhost:\d+$/;
-const LOOPBACK = /^http:\/\/127\.0\.0\.1:\d+$/;
+const LOOPBACK = /^http:\/\/127.0.0.1:\d+$/;
+
+const ALLOW_METHODS = 'GET,POST,PUT,DELETE,OPTIONS,PATCH';
+const ALLOW_HEADERS =
+  'Authorization,Content-Type,X-Requested-With,Accept,Origin';
 
 export function isAllowedCorsOrigin(origin: string | undefined): boolean {
   if (!origin) return true;
@@ -25,18 +28,28 @@ export function isAllowedCorsOrigin(origin: string | undefined): boolean {
   return false;
 }
 
-export const corsOptions: CorsOptions = {
-  origin(origin, callback) {
-    if (!origin) {
-      callback(null, true);
-      return;
+/**
+ * Explicit CORS (replaces cors package) so preflight + Authorization always get
+ * the right headers on Render and other proxies.
+ */
+export function corsMiddleware(req: Request, res: Response, next: NextFunction) {
+  const origin = req.get('Origin') ?? undefined;
+
+  if (origin && isAllowedCorsOrigin(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Vary', 'Origin');
+  }
+
+  if (req.method === 'OPTIONS') {
+    if (origin && isAllowedCorsOrigin(origin)) {
+      res.setHeader('Access-Control-Allow-Methods', ALLOW_METHODS);
+      res.setHeader('Access-Control-Allow-Headers', ALLOW_HEADERS);
+      res.setHeader('Access-Control-Max-Age', '86400');
+      return res.status(204).end();
     }
-    if (isAllowedCorsOrigin(origin)) {
-      callback(null, origin);
-      return;
-    }
-    callback(null, false);
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH']
-};
+    return res.status(403).end();
+  }
+
+  next();
+}
