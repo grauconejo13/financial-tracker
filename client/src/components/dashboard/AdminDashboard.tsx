@@ -1,113 +1,88 @@
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import axios from "axios";
 
 function AdminDashboard() {
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    activeUsers: 0,
+    totalTransactions: 0,
+    status: "Active",
+  });
+
+  const API = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await axios.get(`${API}/api/admin/stats`);
+        setStats(res.data);
+      } catch (err) {
+        console.error("Error fetching stats", err);
+      }
+    };
+
+    fetchStats();
+  }, [API]);
+
   return (
     <div className="container py-4" style={{ background: "var(--bg)" }}>
       <h2 className="mb-4" style={{ color: "var(--text)" }}>
         Admin Dashboard
       </h2>
 
-      {/* 📊 STATS CARDS */}
+      {/* 📊 STATS */}
       <div className="row g-3 mb-4">
-        <div className="col-md-4">
-          <div
-            className="card shadow-sm text-center"
-            style={{
-              borderRadius: "12px",
-              borderLeft: "5px solid var(--primary)",
-            }}
-          >
+        <div className="col-md-3">
+          <div className="card shadow-sm text-center">
             <div className="card-body">
-              <h5 style={{ color: "var(--text)" }}>Total Users</h5>
-              <h3 style={{ color: "var(--primary)" }}>0</h3>
+              <h5>Total Users</h5>
+              <h3>{stats.totalUsers}</h3>
             </div>
           </div>
         </div>
 
-        <div className="col-md-4">
-          <div
-            className="card shadow-sm text-center"
-            style={{
-              borderRadius: "12px",
-              borderLeft: "5px solid var(--accent)",
-            }}
-          >
+        <div className="col-md-3">
+          <div className="card shadow-sm text-center">
             <div className="card-body">
-              <h5 style={{ color: "var(--text)" }}>Total Transactions</h5>
-              <h3 style={{ color: "var(--secondary)" }}>0</h3>
+              <h5>Active Users</h5>
+              <h3>{stats.activeUsers}</h3>
             </div>
           </div>
         </div>
 
-        <div className="col-md-4">
-          <div
-            className="card shadow-sm text-center"
-            style={{
-              borderRadius: "12px",
-              borderLeft: "5px solid var(--secondary)",
-            }}
-          >
+        <div className="col-md-3">
+          <div className="card shadow-sm text-center">
             <div className="card-body">
-              <h5 style={{ color: "var(--text)" }}>System Status</h5>
-              <h3 style={{ color: "var(--accent)" }}>Active</h3>
+              <h5>Total Transactions</h5>
+              <h3>{stats.totalTransactions}</h3>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-md-3">
+          <div className="card shadow-sm text-center">
+            <div className="card-body">
+              <h5>Status</h5>
+              <h3>{stats.status}</h3>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ⚙️ ADMIN ACTIONS */}
+      {/* ⚙️ ACTIONS */}
       <div className="row g-3 mb-4">
         <div className="col-md-6">
-          <Link to="/admin/categories" style={{ textDecoration: "none" }}>
-            <div
-              className="card shadow-sm text-center"
-              style={{
-                borderRadius: "12px",
-                cursor: "pointer",
-                borderLeft: "5px solid var(--primary)",
-              }}
-            >
-              <div className="card-body">
-                <h5 style={{ color: "var(--text)" }}>Manage Categories</h5>
-                <p style={{ color: "var(--secondary)" }}>
-                  Add, edit, or remove expense & income categories
-                </p>
-              </div>
-            </div>
+          <Link to="/admin/categories">
+            <div className="card text-center p-3">Manage Categories</div>
           </Link>
         </div>
 
         <div className="col-md-6">
-          <Link to="/admin/templates" style={{ textDecoration: "none" }}>
-            <div
-              className="card shadow-sm text-center"
-              style={{
-                borderRadius: "12px",
-                cursor: "pointer",
-                borderLeft: "5px solid var(--accent)",
-              }}
-            >
-              <div className="card-body">
-                <h5 style={{ color: "var(--text)" }}>Manage Templates</h5>
-                <p style={{ color: "var(--secondary)" }}>
-                  Create and update savings or financial templates
-                </p>
-              </div>
-            </div>
+          <Link to="/admin/templates">
+            <div className="card text-center p-3">Manage Templates</div>
           </Link>
         </div>
-      </div>
-
-      {/* 📢 INFO */}
-      <div
-        className="alert"
-        style={{
-          background: "var(--bg)",
-          border: "1px solid var(--accent)",
-          color: "var(--text)",
-        }}
-      >
-        Select an admin tool above to manage system data.
       </div>
     </div>
   );

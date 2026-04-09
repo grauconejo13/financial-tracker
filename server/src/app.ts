@@ -13,6 +13,7 @@ import goalRoutes from "./routes/goal.routes";
 import savingsRoutes from "./routes/savings.routes";
 import categoryRoutes from "./routes/admin.category.routes";
 import adminTemplateRoutes from "./routes/admin.template.routes";
+import adminStatsRoutes from "./routes/admin.stats.routes";
 import accountabilityRoutes from "./routes/accountability.routes";
 import templateRoutes from "./routes/template.routes";
 import semesterRoutes from "./routes/semester.routes";
@@ -46,6 +47,7 @@ app.use("/api/goals", goalRoutes);
 app.use("/api/savings", savingsRoutes);
 app.use("/api/admin/categories", categoryRoutes);
 app.use("/api/admin/templates", adminTemplateRoutes);
+app.use("/api/admin/stats", adminStatsRoutes);
 
 app.use(errorHandler);
 
