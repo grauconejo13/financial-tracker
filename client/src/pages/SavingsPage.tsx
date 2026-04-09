@@ -1,9 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  getSavings,
-  addSavings,
-  withdrawSavings
-} from "../api/savingsApi";
+import { getSavings, addSavings, withdrawSavings } from "../api/savingsApi";
 
 import { getTemplates, Template } from "../api/templateApi";
 
@@ -13,7 +9,7 @@ import {
   deleteGoal,
   updateGoal,
   contributeToGoal,
-  Goal
+  Goal,
 } from "../api/goalApi";
 
 const getProgressColor = (pct: number) => {
@@ -92,8 +88,8 @@ const SavingsPage = () => {
           key: f.key,
           label: f.label,
           type: f.type,
-          value: ""
-        }))
+          value: "",
+        })),
       );
       setDynamicFields(fields);
     }
@@ -111,7 +107,7 @@ const SavingsPage = () => {
         await updateGoal(editingId, {
           name: goalName,
           targetAmount: Number(goalAmount),
-          deadline: goalDeadline
+          deadline: goalDeadline,
         });
         setMessage("Goal updated successfully!");
         setEditingId(null);
@@ -121,7 +117,7 @@ const SavingsPage = () => {
           targetAmount: Number(goalAmount),
           deadline: goalDeadline,
           templateType: selectedTemplateData?.type || null,
-          fields: dynamicFields.map((f) => ({ key: f.key, value: f.value }))
+          fields: dynamicFields.map((f) => ({ key: f.key, value: f.value })),
         });
         setMessage("Goal created successfully!");
       }
@@ -166,13 +162,15 @@ const SavingsPage = () => {
     try {
       const res = await contributeToGoal(contributingId, amt);
       setGoals((prev) =>
-        prev.map((g) => (g._id === contributingId ? res.goal : g))
+        prev.map((g) => (g._id === contributingId ? res.goal : g)),
       );
       setContributingId(null);
       setContributeAmount("");
       setMessage("Contribution added!");
     } catch (err: any) {
-      setContributeError(typeof err === "string" ? err : "Failed to contribute");
+      setContributeError(
+        typeof err === "string" ? err : "Failed to contribute",
+      );
     } finally {
       setContributeSaving(false);
     }
@@ -195,8 +193,12 @@ const SavingsPage = () => {
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
         />
-        <button className="btn btn-success me-2" onClick={handleAdd}>Add Funds</button>
-        <button className="btn btn-warning" onClick={handleWithdraw}>Withdraw Funds</button>
+        <button className="btn btn-success me-2" onClick={handleAdd}>
+          Add Funds
+        </button>
+        <button className="btn btn-warning" onClick={handleWithdraw}>
+          Withdraw Funds
+        </button>
       </div>
 
       {/* GOALS */}
@@ -204,23 +206,44 @@ const SavingsPage = () => {
         <h4>Savings Goals</h4>
 
         {!showGoalOptions && (
-          <button className="btn btn-primary mb-3" onClick={() => setShowGoalOptions(true)}>
+          <button
+            className="btn btn-primary mb-3"
+            onClick={() => setShowGoalOptions(true)}
+          >
             Add New Goal
           </button>
         )}
 
         {showGoalOptions && !goalMode && (
           <div className="mb-3">
-            <button className="btn btn-info me-2" onClick={() => setGoalMode("template")}>With Template</button>
-            <button className="btn btn-secondary" onClick={() => setGoalMode("manual")}>Without Template</button>
+            <button
+              className="btn btn-info me-2"
+              onClick={() => setGoalMode("template")}
+            >
+              With Template
+            </button>
+            <button
+              className="btn btn-secondary"
+              onClick={() => setGoalMode("manual")}
+            >
+              Without Template
+            </button>
           </div>
         )}
 
         {goalMode === "template" && (
           <>
-            <select className="form-control mb-2" value={selectedTemplate} onChange={(e) => handleTemplateChange(e.target.value)}>
+            <select
+              className="form-control mb-2"
+              value={selectedTemplate}
+              onChange={(e) => handleTemplateChange(e.target.value)}
+            >
               <option value="">Select Template</option>
-              {templates.map((t) => (<option key={t._id} value={t._id}>{t.name}</option>))}
+              {templates.map((t) => (
+                <option key={t._id} value={t._id}>
+                  {t.name}
+                </option>
+              ))}
             </select>
             {dynamicFields.map((field, index) => (
               <div key={field.key}>
@@ -237,18 +260,52 @@ const SavingsPage = () => {
                 />
               </div>
             ))}
-            <input className="form-control mb-2" placeholder="Goal Name" value={goalName} onChange={(e) => setGoalName(e.target.value)} />
-            <input type="number" className="form-control mb-2" placeholder="Target Amount" value={goalAmount} onChange={(e) => setGoalAmount(e.target.value)} />
-            <input type="date" className="form-control mb-2" value={goalDeadline} onChange={(e) => setGoalDeadline(e.target.value)} />
-            <button className="btn btn-success mb-3" onClick={handleCreateGoal}>Create Goal</button>
+            <input
+              className="form-control mb-2"
+              placeholder="Goal Name"
+              value={goalName}
+              onChange={(e) => setGoalName(e.target.value)}
+            />
+            <input
+              type="number"
+              className="form-control mb-2"
+              placeholder="Target Amount"
+              value={goalAmount}
+              onChange={(e) => setGoalAmount(e.target.value)}
+            />
+            <input
+              type="date"
+              className="form-control mb-2"
+              value={goalDeadline}
+              onChange={(e) => setGoalDeadline(e.target.value)}
+            />
+            <button className="btn btn-success mb-3" onClick={handleCreateGoal}>
+              Create Goal
+            </button>
           </>
         )}
 
         {goalMode === "manual" && (
           <>
-            <input className="form-control mb-2" placeholder="Goal Name" value={goalName} onChange={(e) => setGoalName(e.target.value)} />
-            <input type="number" className="form-control mb-2" placeholder="Target Amount" value={goalAmount} onChange={(e) => setGoalAmount(e.target.value)} />
-            <input type="date" className="form-control mb-2" value={goalDeadline} onChange={(e) => setGoalDeadline(e.target.value)} />
+            <input
+              className="form-control mb-2"
+              placeholder="Goal Name"
+              value={goalName}
+              onChange={(e) => setGoalName(e.target.value)}
+            />
+            <input
+              type="number"
+              className="form-control mb-2"
+              placeholder="Target Amount"
+              value={goalAmount}
+              onChange={(e) => setGoalAmount(e.target.value)}
+            />
+            <input
+              type="date"
+              className="form-control mb-2"
+              value={goalDeadline}
+              onChange={(e) => setGoalDeadline(e.target.value)}
+            />
             <button className="btn btn-success mb-3" onClick={handleCreateGoal}>
               {editingId ? "Update Goal" : "Create Goal"}
             </button>
@@ -259,7 +316,10 @@ const SavingsPage = () => {
 
         {goals.map((g) => {
           const contributed = g.contributedAmount || 0;
-          const pct = Math.min(Math.round((contributed / g.targetAmount) * 100), 100);
+          const pct = Math.min(
+            Math.round((contributed / g.targetAmount) * 100),
+            100,
+          );
           const color = getProgressColor(pct);
           const remaining = g.targetAmount - contributed;
 
@@ -268,28 +328,78 @@ const SavingsPage = () => {
               <div className="d-flex justify-content-between align-items-start mb-2">
                 <div>
                   <strong style={{ fontSize: "1.05rem" }}>{g.name}</strong>
-                  <p className="mb-0 text-muted" style={{ fontSize: "0.85rem" }}>
-                    Target: ${g.targetAmount} &nbsp;|&nbsp; Deadline: {g.deadline?.split("T")[0]}
+                  <p
+                    className="mb-0 text-muted"
+                    style={{ fontSize: "0.85rem" }}
+                  >
+                    Target: ${g.targetAmount} &nbsp;|&nbsp; Deadline:{" "}
+                    {g.deadline?.split("T")[0]}
                   </p>
                 </div>
                 <div>
-                  <button className="btn btn-warning btn-sm me-2" onClick={() => handleEdit(g)}>Edit</button>
-                  <button className="btn btn-danger btn-sm" onClick={() => handleDelete(g._id)}>Delete</button>
+                  <button
+                    className="btn btn-warning btn-sm me-2"
+                    onClick={() => handleEdit(g)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className="btn btn-danger btn-sm"
+                    onClick={() => handleDelete(g._id)}
+                  >
+                    Delete
+                  </button>
                 </div>
               </div>
 
-              <div style={{ fontSize: "0.8rem", color: "#555", marginBottom: "4px" }}>
+              <div
+                style={{
+                  fontSize: "0.8rem",
+                  color: "#555",
+                  marginBottom: "4px",
+                }}
+              >
                 ${contributed.toFixed(2)} of ${g.targetAmount} saved ({pct}%)
               </div>
-              <div style={{ background: "#e5e7eb", borderRadius: "999px", height: "12px", overflow: "hidden", marginBottom: "8px" }}>
-                <div style={{ width: `${pct}%`, height: "100%", background: color, borderRadius: "999px", transition: "width 0.3s ease" }} />
+              <div
+                style={{
+                  background: "#e5e7eb",
+                  borderRadius: "999px",
+                  height: "12px",
+                  overflow: "hidden",
+                  marginBottom: "8px",
+                }}
+              >
+                <div
+                  style={{
+                    width: `${pct}%`,
+                    height: "100%",
+                    background: color,
+                    borderRadius: "999px",
+                    transition: "width 0.3s ease",
+                  }}
+                />
               </div>
 
               {pct >= 100 ? (
-                <span style={{ color: "#22c55e", fontWeight: 600, fontSize: "0.9rem" }}>🎉 Goal reached!</span>
+                <span
+                  style={{
+                    color: "#22c55e",
+                    fontWeight: 600,
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  🎉 Goal reached!
+                </span>
               ) : (
                 <>
-                  <p style={{ fontSize: "0.8rem", color: "#777", marginBottom: "6px" }}>
+                  <p
+                    style={{
+                      fontSize: "0.8rem",
+                      color: "#777",
+                      marginBottom: "6px",
+                    }}
+                  >
                     ${remaining.toFixed(2)} remaining to reach your goal
                   </p>
                   {contributingId === g._id ? (
@@ -304,18 +414,38 @@ const SavingsPage = () => {
                         min={0.01}
                         step={0.01}
                       />
-                      <button className="btn btn-success btn-sm" onClick={handleContribute} disabled={contributeSaving}>
+                      <button
+                        className="btn btn-success btn-sm"
+                        onClick={handleContribute}
+                        disabled={contributeSaving}
+                      >
                         {contributeSaving ? "Saving..." : "Confirm"}
                       </button>
-                      <button className="btn btn-secondary btn-sm" onClick={() => { setContributingId(null); setContributeAmount(""); setContributeError(""); }} disabled={contributeSaving}>
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => {
+                          setContributingId(null);
+                          setContributeAmount("");
+                          setContributeError("");
+                        }}
+                        disabled={contributeSaving}
+                      >
                         Cancel
                       </button>
-                      {contributeError && <span style={{ color: "red", fontSize: "0.8rem" }}>{contributeError}</span>}
+                      {contributeError && (
+                        <span style={{ color: "red", fontSize: "0.8rem" }}>
+                          {contributeError}
+                        </span>
+                      )}
                     </div>
                   ) : (
                     <button
                       className="btn btn-outline-primary btn-sm"
-                      onClick={() => { setContributingId(g._id); setContributeAmount(""); setContributeError(""); }}
+                      onClick={() => {
+                        setContributingId(g._id);
+                        setContributeAmount("");
+                        setContributeError("");
+                      }}
                     >
                       + Contribute
                     </button>
