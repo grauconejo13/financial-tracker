@@ -203,7 +203,7 @@ Copy `client/.env.example` → `client/.env` and `server/.env.example` → `serv
 
 | Variable | Description | Example (local) |
 |----------|-------------|-----------------|
-| `VITE_API_URL` | Backend origin (`/api` optional; client normalizes it) | `http://localhost:4000` |
+| `VITE_API_URL` | Backend origin only — no `/api`, no trailing slash. **On Vercel use `https://…` (same as your API’s public URL).** Using `http://` while the site is HTTPS will cause blocked requests. | `http://localhost:4000` |
 
 **Vercel:** set `VITE_API_URL` to your **deployed API** URL, then **redeploy**.
 
