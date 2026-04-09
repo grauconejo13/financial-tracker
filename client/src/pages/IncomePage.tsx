@@ -48,7 +48,7 @@ const IncomePage = () => {
     setSaving(true);
     try {
       await addIncome({
-        amount: Number(amount),
+        amount: Number(parseFloat(amount).toFixed(2)),
         reason,
         date
       });
@@ -81,7 +81,7 @@ const IncomePage = () => {
     setSaving(true);
     try {
       await editIncome(editingId, {
-        amount: Number(editAmount),
+        amount: Number(parseFloat(editAmount).toFixed(2)),
         reason: editReason,
         date: editDate
       });
@@ -112,9 +112,12 @@ const IncomePage = () => {
 
   if (loading) return <div className="container py-4">Loading incomes...</div>;
 
+  const totalIncome = incomes.reduce((sum, inc) => sum + inc.amount, 0);
+
   return (
     <div className="container py-4">
       <h2>Income</h2>
+      <h4 className="mb-3">Total Income: ${totalIncome.toFixed(2)}</h4>
       {message && <div className="alert alert-success">{message}</div>}
       {error && <div className="alert alert-danger">{error}</div>}
 
@@ -127,7 +130,16 @@ const IncomePage = () => {
               className="form-control"
               placeholder="Amount"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              step="0.01"
+              min="0"
+              onChange={(e) => {
+                const value = e.target.value;
+
+                // Only allow numbers up to 2 decimal places
+                if (/^\d*\.?\d{0,2}$/.test(value)) {
+                  setAmount(value);
+                }
+              }}
             />
           </div>
           <div className="col-md-3">
@@ -175,7 +187,7 @@ const IncomePage = () => {
               <tr key={inc._id}>
                 <td>{index + 1}</td>
                 <td>{inc.date ? new Date(inc.date).toLocaleDateString() : "-"}</td>
-                <td>{inc.amount}</td>
+                <td>${inc.amount.toFixed(2)}</td>
                 <td>{inc.reason}</td>
                 <td>
                   <button
@@ -215,7 +227,16 @@ const IncomePage = () => {
                     type="number"
                     className="form-control"
                     value={editAmount}
-                    onChange={(e) => setEditAmount(e.target.value)}
+                    step="0.01"
+                    min="0"
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      
+                      // Only allow numbers up to 2 decimal places
+                      if (/^\d*\.?\d{0,2}$/.test(value)){
+                      setEditAmount(value);
+                    }
+                  }}
                   />
                 </div>
                 <div className="mb-2">
