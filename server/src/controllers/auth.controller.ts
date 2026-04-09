@@ -1,18 +1,29 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { User } from '../models/User.model';
 import { BlacklistedToken } from '../models/BlacklistedToken.model';
 import { hashPassword, comparePassword } from '../utils/hashPassword';
-import { generateToken } from '../utils/generateToken';
+import { generateToken, generatePending2FAToken } from '../utils/generateToken';
+import { verifyTotpCode } from '../utils/totp';
 import { ENV } from '../config/env';
+import { serializeUser } from '../utils/serializeUser';
 
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email, password } = req.body as { email?: string; password?: string };
+    const { name, email, password } = req.body as {
+      name?: string;
+      email?: string;
+      password?: string;
+    };
 
     if (!email || !password) {
       return res.status(400).json({ message: 'Email and password are required' });
+    }
+    const trimmedName = name?.trim() ?? '';
+    if (!trimmedName) {
+      return res.status(400).json({ message: 'Name is required' });
     }
     if (password.length < 6) {
       return res.status(400).json({ message: 'Password must be at least 6 characters' });
@@ -26,6 +37,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
     const hashed = await hashPassword(password);
 
     const user = await User.create({
+      name: trimmedName,
       email: email.toLowerCase(),
       password: hashed
     });
@@ -33,7 +45,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
     const token = generateToken(user.id, user.role);
 
     return res.status(201).json({
-      user: { id: user.id, email: user.email, role: user.role },
+      user: serializeUser(user),
       token
     });
   } catch (err) {
@@ -59,10 +71,76 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
+    const with2fa = await User.findById(user._id).select('+twoFactorSecret');
+    if (
+      with2fa?.twoFactorEnabled &&
+      with2fa.twoFactorSecret &&
+      String(with2fa.twoFactorSecret).length > 0
+    ) {
+      return res.json({
+        requiresTwoFactor: true,
+        twoFactorToken: generatePending2FAToken(user.id)
+      });
+    }
+
     const token = generateToken(user.id, user.role);
 
     return res.json({
-      user: { id: user.id, email: user.email, role: user.role },
+      user: serializeUser(user),
+      token
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const verify2FALogin = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { twoFactorToken, code } = req.body as {
+      twoFactorToken?: string;
+      code?: string;
+    };
+    if (!twoFactorToken || !code) {
+      return res
+        .status(400)
+        .json({ message: 'Verification session and code are required' });
+    }
+
+    let decoded: { id?: string; pending2FA?: boolean };
+    try {
+      decoded = jwt.verify(twoFactorToken, ENV.JWT_SECRET) as {
+        id?: string;
+        pending2FA?: boolean;
+      };
+    } catch {
+      return res.status(401).json({
+        message: 'Invalid or expired login session. Please sign in again.'
+      });
+    }
+
+    if (!decoded.pending2FA || !decoded.id) {
+      return res.status(401).json({ message: 'Invalid verification session' });
+    }
+
+    const user = await User.findById(decoded.id).select('+twoFactorSecret');
+    if (!user || !user.twoFactorEnabled || !user.twoFactorSecret) {
+      return res.status(401).json({
+        message: 'Two-factor authentication is not active for this account'
+      });
+    }
+
+    const ok = verifyTotpCode(String(code), user.twoFactorSecret);
+    if (!ok) {
+      return res.status(401).json({ message: 'Invalid authenticator code' });
+    }
+
+    const token = generateToken(user.id, user.role);
+    return res.json({
+      user: serializeUser(user),
       token
     });
   } catch (err) {
@@ -94,7 +172,73 @@ export const me = async (req: AuthRequest, res: Response, next: NextFunction) =>
   try {
     const user = await User.findById(req.user!._id).select('-password');
     if (!user) return res.status(404).json({ message: 'User not found' });
-    return res.json({ user: { id: user.id, email: user.email, role: user.role } });
+    return res.json({
+      user: serializeUser(user)
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const forgotPassword = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { email } = req.body as { email?: string };
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    // Return success even when user does not exist to avoid account enumeration.
+    if (!user) {
+      return res.json({ message: 'If the email exists, a reset link has been generated.' });
+    }
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpires = expiresAt;
+    await user.save();
+
+    const appBase = process.env.CLIENT_URL || 'http://localhost:5173';
+    const resetLink = `${appBase.replace(/\/$/, '')}/reset-password?token=${rawToken}`;
+    console.log(`Password reset link for ${user.email}: ${resetLink}`);
+
+    return res.json({ message: 'If the email exists, a reset link has been generated.' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const resetPassword = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { token, password } = req.body as { token?: string; password?: string };
+
+    if (!token || !password) {
+      return res.status(400).json({ message: 'Token and new password are required' });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: new Date() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired reset token' });
+    }
+
+    user.password = await hashPassword(password);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    return res.json({ message: 'Password reset successful. Please log in.' });
   } catch (err) {
     next(err);
   }

@@ -1,7 +1,7 @@
 import axios from "axios";
+import { getApiOrigin } from "../config/apiOrigin";
 
-const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
-const API_URL = `${API_BASE}/api/transactions`;
+const API_URL = `${getApiOrigin()}/api/transactions`;
 
 export interface Transaction {
   _id: string;

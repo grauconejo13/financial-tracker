@@ -1,4 +1,6 @@
-const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+import { getApiOrigin } from "../config/apiOrigin";
+
+const API_BASE = getApiOrigin();
 
 export async function saveSemester(startDate: string, endDate: string) {
   const response = await fetch(`${API_BASE}/api/semester/set`, {
