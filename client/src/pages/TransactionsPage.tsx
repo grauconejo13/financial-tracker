@@ -8,6 +8,7 @@ import {
   type Transaction,
   type TransactionFilters,
 } from "../api/transactionApi";
+import { getApiErrorMessage } from "../utils/apiError";
 
 const TransactionsPage = () => {
   const { token } = useAuth();
@@ -120,8 +121,7 @@ const TransactionsPage = () => {
       setFilterDateTo("");
       await loadCategories();
     } catch (e: unknown) {
-      const ax = e as { response?: { data?: { message?: string } } };
-      setError(ax?.response?.data?.message || "Failed to add transaction");
+      setError(getApiErrorMessage(e, "Failed to add transaction"));
     } finally {
       setAddSubmitting(false);
     }
