@@ -1,34 +1,84 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "../context/AuthContext";
 import {
   getTransactions,
+  getTransactionCategories,
   deleteTransaction,
-  type Transaction
+  createTransaction,
+  type Transaction,
+  type TransactionFilters,
 } from "../api/transactionApi";
+import { getApiErrorMessage } from "../utils/apiError";
 
 const TransactionsPage = () => {
   const { token } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
+  const [addType, setAddType] = useState<"income" | "expense">("expense");
+  const [addAmount, setAddAmount] = useState("");
+  const [addDescription, setAddDescription] = useState("");
+  const [addCategory, setAddCategory] = useState("");
+  const [addReason, setAddReason] = useState("");
+  const [addSubmitting, setAddSubmitting] = useState(false);
+
+  const [filterCategory, setFilterCategory] = useState("");
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
+  const [appliedFilters, setAppliedFilters] = useState<TransactionFilters>({});
+
+  const loadCategories = useCallback(async () => {
+    if (!token) return;
+    try {
+      const cats = await getTransactionCategories(token);
+      setCategories(cats);
+    } catch {
+      setCategories([]);
+    }
+  }, [token]);
+
+  const loadTransactions = useCallback(async () => {
+    if (!token) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getTransactions(token, appliedFilters);
+      setTransactions(data);
+    } catch (e: unknown) {
+      const ax = e as { response?: { data?: { message?: string } } };
+      setError(ax?.response?.data?.message || "Failed to load transactions");
+    } finally {
+      setLoading(false);
+    }
+  }, [token, appliedFilters]);
 
   useEffect(() => {
-    const load = async () => {
-      if (!token) return;
-      try {
-        const data = await getTransactions(token);
-        setTransactions(data);
-      } catch (e: any) {
-        setError(e?.response?.data?.message || "Failed to load transactions");
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, [token]);
+    loadCategories();
+  }, [loadCategories]);
+
+  useEffect(() => {
+    loadTransactions();
+  }, [loadTransactions]);
+
+  const applyFilters = () => {
+    const next: TransactionFilters = {};
+    if (filterCategory.trim()) next.category = filterCategory.trim();
+    if (filterDateFrom) next.dateFrom = filterDateFrom;
+    if (filterDateTo) next.dateTo = filterDateTo;
+    setAppliedFilters(next);
+  };
+
+  const clearFilters = () => {
+    setFilterCategory("");
+    setFilterDateFrom("");
+    setFilterDateTo("");
+    setAppliedFilters({});
+  };
 
   const openDelete = (id: string) => {
     setDeleteId(id);
@@ -36,65 +86,349 @@ const TransactionsPage = () => {
     setError(null);
   };
 
+  const confirmAdd = async () => {
+    if (!token) return;
+    const amt = Number(addAmount);
+    if (!addDescription.trim() || Number.isNaN(amt) || amt <= 0) {
+      setError("Valid amount and description are required");
+      return;
+    }
+    if (addReason.trim().length < 5) {
+      setError("Reason must be at least 5 characters (accountability log)");
+      return;
+    }
+    setAddSubmitting(true);
+    setError(null);
+    try {
+      await createTransaction(
+        {
+          type: addType,
+          amount: amt,
+          description: addDescription.trim(),
+          category: addCategory.trim() || undefined,
+          reason: addReason.trim(),
+        },
+        token,
+      );
+      setShowAdd(false);
+      setAddAmount("");
+      setAddDescription("");
+      setAddCategory("");
+      setAddReason("");
+      setAppliedFilters({});
+      setFilterCategory("");
+      setFilterDateFrom("");
+      setFilterDateTo("");
+      await loadCategories();
+    } catch (e: unknown) {
+      setError(getApiErrorMessage(e, "Failed to add transaction"));
+    } finally {
+      setAddSubmitting(false);
+    }
+  };
+
   const confirmDelete = async () => {
     if (!deleteId || !token) return;
-    if (!reason.trim()) {
-      setError("Reason is required");
+    const r = reason.trim();
+    if (r.length < 5) {
+      setError("Reason must be at least 5 characters");
       return;
     }
     setSubmitting(true);
     try {
-      await deleteTransaction(deleteId, reason, token);
+      await deleteTransaction(deleteId, r, token);
       setTransactions((prev) => prev.filter((t) => t._id !== deleteId));
       setDeleteId(null);
       setReason("");
-    } catch (e: any) {
-      setError(e?.response?.data?.message || "Failed to delete transaction");
+      void loadCategories();
+    } catch (e: unknown) {
+      const ax = e as { response?: { data?: { message?: string } } };
+      setError(ax?.response?.data?.message || "Failed to delete transaction");
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading) return <div className="container py-4">Loading transactions...</div>;
-
   return (
-    <div className="container py-4">
-      <h2>Transactions</h2>
-      {error && <div className="alert alert-danger">{error}</div>}
-      {transactions.length === 0 ? (
-        <p>No transactions yet.</p>
+    <div>
+      <header className="mb-4 d-flex flex-wrap align-items-start justify-content-between gap-3">
+        <div>
+          <h1 className="cp-page-title mb-2">Transactions</h1>
+          <p className="cp-page-lead mb-0">
+            Add entries with a reason (logged), filter by category or dates, and review
+            your list.
+          </p>
+        </div>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => {
+            setShowAdd(true);
+            setError(null);
+          }}
+        >
+          Add transaction
+        </button>
+      </header>
+
+      <div className="cp-card p-3 p-md-4 mb-4">
+        <h2 className="h6 fw-bold text-uppercase text-muted mb-3">Filters</h2>
+        <div className="row g-3 align-items-end">
+          <div className="col-md-4">
+            <label className="form-label" htmlFor="tx-filter-category">
+              Category
+            </label>
+            <input
+              id="tx-filter-category"
+              className="form-control"
+              list="tx-category-options"
+              placeholder="Type or pick a category"
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+            />
+            <datalist id="tx-category-options">
+              {categories.map((c) => (
+                <option key={c} value={c} />
+              ))}
+            </datalist>
+          </div>
+          <div className="col-md-3 col-lg-2">
+            <label className="form-label" htmlFor="tx-filter-from">
+              From
+            </label>
+            <input
+              id="tx-filter-from"
+              type="date"
+              className="form-control"
+              value={filterDateFrom}
+              onChange={(e) => setFilterDateFrom(e.target.value)}
+            />
+          </div>
+          <div className="col-md-3 col-lg-2">
+            <label className="form-label" htmlFor="tx-filter-to">
+              To
+            </label>
+            <input
+              id="tx-filter-to"
+              type="date"
+              className="form-control"
+              value={filterDateTo}
+              onChange={(e) => setFilterDateTo(e.target.value)}
+            />
+          </div>
+          <div className="col-md-8 col-lg-4 d-flex flex-wrap gap-2">
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={applyFilters}
+            >
+              Apply filters
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline-secondary"
+              onClick={clearFilters}
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+        {(appliedFilters.category ||
+          appliedFilters.dateFrom ||
+          appliedFilters.dateTo) && (
+          <p className="small text-muted mt-3 mb-0">
+            Showing results for{" "}
+            {[
+              appliedFilters.category && `category “${appliedFilters.category}”`,
+              appliedFilters.dateFrom && `from ${appliedFilters.dateFrom}`,
+              appliedFilters.dateTo && `through ${appliedFilters.dateTo}`,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+            .
+          </p>
+        )}
+      </div>
+
+      {error && !deleteId && !showAdd && (
+        <div className="alert alert-danger">{error}</div>
+      )}
+
+      {loading ? (
+        <div className="cp-card p-4 text-muted">Loading transactions…</div>
+      ) : transactions.length === 0 ? (
+        <p className="text-muted">No transactions match these filters.</p>
       ) : (
-        <table className="table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Date</th>
-              <th>Type</th>
-              <th>Description</th>
-              <th>Amount</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {transactions.map((t, index) => (
-              <tr key={t._id}>
-                <td>{index + 1}</td>
-                <td>{new Date(t.createdAt).toLocaleDateString()}</td>
-                <td>{t.type}</td>
-                <td>{t.description}</td>
-                <td>{t.amount}</td>
-                <td>
-                  <button
-                    className="btn btn-sm btn-outline-danger"
-                    onClick={() => openDelete(t._id)}
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="cp-card p-0 overflow-hidden">
+          <div className="table-responsive cp-table-wrap rounded-3 border">
+            <table className="table table-hover align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Date</th>
+                  <th>Type</th>
+                  <th>Category</th>
+                  <th>Description</th>
+                  <th className="text-end">Amount</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {transactions.map((t, index) => (
+                  <tr key={t._id}>
+                    <td>{index + 1}</td>
+                    <td className="text-nowrap">
+                      {new Date(t.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="text-capitalize">{t.type}</td>
+                    <td>{t.category ?? "—"}</td>
+                    <td>{t.description}</td>
+                    <td
+                      className={`text-end fw-semibold ${
+                        t.type === "income" ? "text-success" : "text-danger"
+                      }`}
+                    >
+                      ${Number(t.amount).toFixed(2)}
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-danger"
+                        onClick={() => openDelete(t._id)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {showAdd && (
+        <div className="modal d-block" style={{ background: "#00000055" }}>
+          <div className="modal-dialog modal-lg modal-dialog-scrollable">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Add transaction</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => !addSubmitting && setShowAdd(false)}
+                  disabled={addSubmitting}
+                  aria-label="Close"
+                />
+              </div>
+              <div className="modal-body">
+                <p className="small text-muted">
+                  Your reason will appear in <strong>Accountability history</strong> with
+                  this entry.
+                </p>
+                {error && showAdd && (
+                  <div className="alert alert-danger small py-2">{error}</div>
+                )}
+                <div className="row g-3">
+                  <div className="col-md-4">
+                    <label className="form-label" htmlFor="add-type">
+                      Type
+                    </label>
+                    <select
+                      id="add-type"
+                      className="form-select"
+                      value={addType}
+                      onChange={(e) =>
+                        setAddType(e.target.value as "income" | "expense")
+                      }
+                    >
+                      <option value="expense">Expense</option>
+                      <option value="income">Income</option>
+                    </select>
+                  </div>
+                  <div className="col-md-8">
+                    <label className="form-label" htmlFor="add-amount">
+                      Amount
+                    </label>
+                    <input
+                      id="add-amount"
+                      type="number"
+                      min={0.01}
+                      step="0.01"
+                      className="form-control"
+                      value={addAmount}
+                      onChange={(e) => setAddAmount(e.target.value)}
+                    />
+                  </div>
+                  <div className="col-12">
+                    <label className="form-label" htmlFor="add-desc">
+                      Description
+                    </label>
+                    <input
+                      id="add-desc"
+                      type="text"
+                      className="form-control"
+                      value={addDescription}
+                      onChange={(e) => setAddDescription(e.target.value)}
+                    />
+                  </div>
+                  <div className="col-12">
+                    <label className="form-label" htmlFor="add-cat">
+                      Category (optional)
+                    </label>
+                    <input
+                      id="add-cat"
+                      className="form-control"
+                      list="tx-category-options-add"
+                      value={addCategory}
+                      onChange={(e) => setAddCategory(e.target.value)}
+                    />
+                    <datalist id="tx-category-options-add">
+                      {categories.map((c) => (
+                        <option key={c} value={c} />
+                      ))}
+                    </datalist>
+                  </div>
+                  <div className="col-12">
+                    <label className="form-label" htmlFor="add-reason">
+                      Reason (min 5 characters)
+                    </label>
+                    <textarea
+                      id="add-reason"
+                      className="form-control"
+                      rows={3}
+                      value={addReason}
+                      onChange={(e) => setAddReason(e.target.value)}
+                      placeholder="Why are you recording this?"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowAdd(false)}
+                  disabled={addSubmitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={confirmAdd}
+                  disabled={
+                    addSubmitting ||
+                    addReason.trim().length < 5 ||
+                    !addDescription.trim()
+                  }
+                >
+                  {addSubmitting ? "Saving…" : "Save"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {deleteId && (
@@ -108,19 +442,27 @@ const TransactionsPage = () => {
                   className="btn-close"
                   onClick={() => setDeleteId(null)}
                   disabled={submitting}
+                  aria-label="Close"
                 />
               </div>
               <div className="modal-body">
-                <p>Please provide a reason for deleting this transaction.</p>
+                <p>
+                  Please provide a reason for deleting this transaction (minimum 5
+                  characters). This will appear in your{" "}
+                  <strong>Accountability history</strong>.
+                </p>
+                {error && <div className="alert alert-danger small py-2">{error}</div>}
                 <textarea
                   className="form-control"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   rows={3}
+                  placeholder="Why are you removing this entry?"
                 />
               </div>
               <div className="modal-footer">
                 <button
+                  type="button"
                   className="btn btn-secondary"
                   onClick={() => setDeleteId(null)}
                   disabled={submitting}
@@ -128,11 +470,12 @@ const TransactionsPage = () => {
                   Cancel
                 </button>
                 <button
+                  type="button"
                   className="btn btn-danger"
                   onClick={confirmDelete}
-                  disabled={submitting || !reason.trim()}
+                  disabled={submitting || reason.trim().length < 5}
                 >
-                  {submitting ? "Deleting..." : "Confirm delete"}
+                  {submitting ? "Deleting…" : "Confirm delete"}
                 </button>
               </div>
             </div>
@@ -144,4 +487,3 @@ const TransactionsPage = () => {
 };
 
 export default TransactionsPage;
-

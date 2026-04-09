@@ -5,6 +5,7 @@ import {
   MdReceiptLong,
   MdSavings,
   MdCurrencyExchange,
+  MdHistory,
 } from "react-icons/md";
 import {
   FaGhost,
@@ -25,6 +26,7 @@ export const MAIN_NAV_ITEMS: AppNavItem[] = [
   { to: "/ghost", label: "Ghost", Icon: FaGhost },
   { to: "/income", label: "Income", Icon: MdTrendingUp },
   { to: "/transactions", label: "Transactions", Icon: MdReceiptLong },
+  { to: "/accountability", label: "Accountability", Icon: MdHistory },
   { to: "/debts", label: "Debts", Icon: FaCreditCard },
   { to: "/savings", label: "Savings", Icon: MdSavings },
   { to: "/currency-settings", label: "Currency", Icon: MdCurrencyExchange },

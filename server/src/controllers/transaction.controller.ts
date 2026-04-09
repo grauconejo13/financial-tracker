@@ -1,7 +1,112 @@
 import { Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 import { Transaction } from '../models/Transaction.model';
+import { AccountabilityLog } from '../models/AccountabilityLog.model';
 import { AuthRequest } from '../middleware/auth.middleware';
+import {
+  parseTransactionListQuery,
+  buildTransactionListFilter
+} from '../utils/transactionListQuery';
+
+export const createTransaction = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ message: 'Unauthenticated' });
+    }
+
+    const { type, amount, description, category, reason } = req.body as {
+      type?: string;
+      amount?: number;
+      description?: string;
+      category?: string;
+      reason?: string;
+    };
+
+    if (type !== 'income' && type !== 'expense') {
+      return res.status(400).json({ message: 'type must be income or expense' });
+    }
+
+    if (amount === undefined || amount <= 0) {
+      return res.status(400).json({ message: 'Amount must be greater than zero' });
+    }
+
+    if (!description || !description.trim()) {
+      return res.status(400).json({ message: 'Description is required' });
+    }
+
+    if (!reason || reason.trim().length < 5) {
+      return res
+        .status(400)
+        .json({ message: 'Reason is required (min 5 characters)' });
+    }
+
+    const tx = await Transaction.create({
+      user: new mongoose.Types.ObjectId(user._id.toString()),
+      type,
+      amount,
+      description: description.trim(),
+      category: category?.trim() || undefined
+    });
+
+    await AccountabilityLog.create({
+      user: new mongoose.Types.ObjectId(user._id.toString()),
+      action: 'transaction_create',
+      entityType: 'transaction',
+      entityId: tx._id,
+      reason: reason.trim(),
+      detail: {
+        created: {
+          type,
+          amount,
+          description: description.trim(),
+          category: category?.trim() || undefined
+        }
+      }
+    });
+
+    return res.status(201).json({ transaction: tx });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getMyTransactionCategories = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ message: 'Unauthenticated' });
+    }
+
+    const rows = await Transaction.find({
+      user: user._id,
+      isDeleted: false,
+      category: { $exists: true, $nin: [null, ''] }
+    })
+      .select('category')
+      .lean();
+
+    const set = new Set<string>();
+    for (const r of rows) {
+      if (r.category != null && r.category !== '') {
+        set.add(String(r.category));
+      }
+    }
+
+    const categories = [...set].sort((a, b) => a.localeCompare(b));
+    return res.json({ categories });
+  } catch (err) {
+    next(err);
+  }
+};
 
 export const getMyTransactions = async (
   req: AuthRequest,
@@ -14,10 +119,20 @@ export const getMyTransactions = async (
       return res.status(401).json({ message: 'Unauthenticated' });
     }
 
-    const transactions = await Transaction.find({
-      user: user._id,
-      isDeleted: false
-    }).sort({ createdAt: -1 });
+    let listQuery;
+    try {
+      listQuery = parseTransactionListQuery(req.query as Record<string, unknown>);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Invalid query parameters';
+      return res.status(400).json({ message: msg });
+    }
+
+    const filter = buildTransactionListFilter(
+      new mongoose.Types.ObjectId(user._id.toString()),
+      listQuery
+    );
+
+    const transactions = await Transaction.find(filter).sort({ createdAt: -1 });
 
     return res.json({ transactions });
   } catch (err) {
@@ -67,12 +182,31 @@ export const deleteTransaction = async (
       return res.status(409).json({ message: 'Transaction already deleted' });
     }
 
+    const deletedSnapshot = {
+      type: tx.type,
+      amount: tx.amount,
+      description: tx.description,
+      category:
+        tx.category != null && tx.category !== ''
+          ? String(tx.category)
+          : undefined
+    };
+
     tx.isDeleted = true;
     tx.deletedAt = new Date();
     tx.deletedBy = new mongoose.Types.ObjectId(user._id);
     tx.deleteReason = reason.trim();
 
     await tx.save();
+
+    await AccountabilityLog.create({
+      user: new mongoose.Types.ObjectId(user._id.toString()),
+      action: 'transaction_delete',
+      entityType: 'transaction',
+      entityId: tx._id,
+      reason: reason.trim(),
+      detail: { deleted: deletedSnapshot }
+    });
 
     return res.status(200).json({ transaction: tx });
   } catch (err) {
@@ -136,11 +270,38 @@ export const editTransaction = async (
       return res.status(409).json({ message: 'Cannot edit a deleted transaction' });
     }
 
+    const before = {
+      amount: tx.amount,
+      description: tx.description,
+      category:
+        tx.category != null && tx.category !== ''
+          ? String(tx.category)
+          : ''
+    };
+
     if (amount !== undefined) tx.amount = amount;
     if (description !== undefined) tx.description = description;
     if (category !== undefined) tx.category = category;
 
+    const after = {
+      amount: tx.amount,
+      description: tx.description,
+      category:
+        tx.category != null && tx.category !== ''
+          ? String(tx.category)
+          : ''
+    };
+
     await tx.save();
+
+    await AccountabilityLog.create({
+      user: new mongoose.Types.ObjectId(user._id.toString()),
+      action: 'transaction_edit',
+      entityType: 'transaction',
+      entityId: tx._id,
+      reason: reason.trim(),
+      detail: { before, after }
+    });
 
     return res.status(200).json({ transaction: tx });
   } catch (err) {

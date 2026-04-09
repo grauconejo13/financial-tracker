@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 import bodyParser from "body-parser";
-import { ENV } from "./config/env";
+import { corsOptions } from "./config/corsOptions";
 import { errorHandler } from "./middleware/error.middleware";
 import transactionRoutes from "./routes/transaction.routes";
 import debtRoutes from "./routes/debt.routes";
@@ -14,27 +14,13 @@ import goalRoutes from "./routes/goal.routes";
 import savingsRoutes from "./routes/savings.routes";
 import categoryRoutes from "./routes/admin.category.routes";
 import adminTemplateRoutes from "./routes/admin.template.routes";
+import accountabilityRoutes from "./routes/accountability.routes";
+import templateRoutes from "./routes/template.routes";
 
 const app = express();
 
-const corsOrigins = Array.from(
-  new Set([
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "https://financial-tracker-kappa-wine.vercel.app",
-    ...ENV.CORS_ORIGINS,
-  ]),
-);
-
-app.use(
-  cors({
-    origin: corsOrigins,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    credentials: true,
-  }),
-);
-
-app.options("*", cors());
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 /** Profile updates can include base64 avatars; default ~100kb is too small */
 app.use(bodyParser.json({ limit: "2mb" }));
 app.use(bodyParser.urlencoded({ extended: true, limit: "2mb" }));
@@ -49,7 +35,9 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/templates", templateRoutes);
 app.use("/api/transactions", transactionRoutes);
+app.use("/api/accountability", accountabilityRoutes);
 app.use("/api/debts", debtRoutes);
 app.use("/api/expense", expenseRoutes);
 app.use("/api/user", userRoutes);

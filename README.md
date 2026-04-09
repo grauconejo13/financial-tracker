@@ -172,6 +172,19 @@ Open a **new terminal** and:
 
 ---
 
+## Transactions, filters & accountability (CP-22 / CP-24 / CP-25)
+
+| Area | What |
+|------|------|
+| **Accountability history** | Sidebar → **Accountability**. Lists reasons you gave for **creating**, **editing**, and **deleting** transactions (with change snapshots where applicable). |
+| **Add transaction** | **Transactions** → **Add transaction** — requires a **reason** (min 5 chars) for the audit log. |
+| **Filters** | Same page: **category** (with datalist from your data), **date range** (`YYYY-MM-DD` via date pickers), **Apply filters** / **Clear**. |
+| **API** | `GET /api/transactions?category=&dateFrom=&dateTo=` · `GET /api/transactions/categories` · `POST /api/transactions` · `GET /api/accountability` |
+
+**Backend tests:** from `server/`, run `npm test` (Vitest helpers for transaction list query parsing).
+
+---
+
 ## Quick Reference
 
 | Component | URL | Port |
@@ -190,7 +203,7 @@ Copy `client/.env.example` → `client/.env` and `server/.env.example` → `serv
 
 | Variable | Description | Example (local) |
 |----------|-------------|-----------------|
-| `VITE_API_URL` | Backend origin (`/api` optional; client normalizes it) | `http://localhost:4000` |
+| `VITE_API_URL` | Backend origin only — no `/api`, no trailing slash. **On Vercel use `https://…` (same as your API’s public URL).** Using `http://` while the site is HTTPS will cause blocked requests. | `http://localhost:4000` |
 
 **Vercel:** set `VITE_API_URL` to your **deployed API** URL, then **redeploy**.
 
@@ -220,6 +233,12 @@ Copy `client/.env.example` → `client/.env` and `server/.env.example` → `serv
 **Works locally but not on Vercel**
 - Set `VITE_API_URL` on Vercel to your **hosted** API (not `localhost`) and redeploy
 - On Render (API host): set `CORS_ORIGINS` if your Vercel URL is not the default one in code
+
+**Vercel shows a blank page or nothing loads**
+1. **Redeploy after env vars** — Vite reads `VITE_API_URL` at **build** time. In Vercel → Project → Settings → Environment Variables, set `VITE_API_URL` for **Production** (and **Preview** if you use previews), then **Redeploy**.
+2. **Root directory** — If the repo contains `client` and `server`, set Vercel **Root Directory** to `client`, Build `npm run build`, Output `dist`.
+3. **Browser DevTools → Console** — If you see `[ClearPath] API URL points to localhost…`, fix `VITE_API_URL` and redeploy.
+4. **CORS** — The API allows `https://*.vercel.app` by default. For a **custom domain**, add it to server `CORS_ORIGINS` (comma-separated) and restart the API.
 
 **Port already in use**
 - Change `PORT` in `server/.env` and `VITE_API_URL` in `client/.env` accordingly
