@@ -7,6 +7,8 @@ import { ProtectedRoute } from "./components/common/ProtectedRoute";
 import Home from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import DashboardPage from "./pages/DashboardPage";
 import BudgetPage from "./pages/BudgetPage";
 import GhostPage from "./pages/GhostPage";
@@ -19,6 +21,7 @@ import CurrencySettingsPage from "./pages/CurrencySettingsPage";
 import SavingsPage from "./pages/SavingsPage";
 import CategoryPage from "./pages/CategoryPage";
 import TemplatePage from "./pages/TemplatePage";
+import ProfilePage from "./pages/ProfilePage";
 
 function App() {
   return (
@@ -29,11 +32,21 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route
               path="/dashboard"
               element={
                 <ProtectedRoute>
                   <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
                 </ProtectedRoute>
               }
             />
@@ -109,8 +122,23 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/admin/categories" element={<CategoryPage />} />
-            <Route path="/admin/templates" element={<TemplatePage />} />
+            <Route
+              path="/admin/categories"
+              element={
+                <ProtectedRoute>
+                  <CategoryPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/templates"
+              element={
+                <ProtectedRoute>
+                  <TemplatePage />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </Layout>
       </Router>

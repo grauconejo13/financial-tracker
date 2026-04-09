@@ -1,19 +1,19 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { saveCurrency } from "../api/currencyApi";
-
-const CURRENCIES = [
-  { code: "USD", label: "🇺🇸 USD – US Dollar" },
-  { code: "EUR", label: "🇪🇺 EUR – Euro" },
-  { code: "GBP", label: "🇬🇧 GBP – British Pound" },
-  { code: "JPY", label: "🇯🇵 JPY – Japanese Yen" },
-  { code: "CAD", label: "🇨🇦 CAD – Canadian Dollar" },
-];
+import { PROFILE_CURRENCIES } from "../data/profileOptions";
+import { normalizeUser } from "../utils/normalizeUser";
 
 const CurrencySettingsPage = () => {
-  const { token } = useAuth();
+  const { token, user, setUserFromServer } = useAuth();
   const [currency, setCurrency] = useState("USD");
+
+  useEffect(() => {
+    if (user?.preferredCurrency) {
+      setCurrency(user.preferredCurrency);
+    }
+  }, [user?.preferredCurrency]);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -24,7 +24,10 @@ const CurrencySettingsPage = () => {
     setMessage(null);
 
     try {
-      await saveCurrency(currency, token);
+      const data = await saveCurrency(currency, token);
+      if (data?.user) {
+        setUserFromServer(normalizeUser(data.user));
+      }
       setMessage("Currency preference saved.");
     } catch (e: unknown) {
       if (axios.isAxiosError(e)) {
@@ -53,7 +56,7 @@ const CurrencySettingsPage = () => {
             setCurrency(e.target.value)
           }
         >
-          {CURRENCIES.map((c) => (
+          {PROFILE_CURRENCIES.map((c) => (
             <option key={c.code} value={c.code}>
               {c.label}
             </option>

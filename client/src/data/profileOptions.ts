@@ -1,0 +1,76 @@
+/** Must match server ALLOWED_LANGUAGES */
+export const PROFILE_LANGUAGES = [
+  { code: "en", label: "English" },
+  { code: "es", label: "Español" },
+  { code: "fr", label: "Français" },
+  { code: "de", label: "Deutsch" },
+  { code: "bn", label: "বাংলা" },
+  { code: "hi", label: "हिन्दी" },
+  { code: "zh", label: "中文" },
+  { code: "ja", label: "日本語" },
+  { code: "pt", label: "Português" },
+  { code: "ar", label: "العربية" },
+  { code: "it", label: "Italiano" },
+  { code: "ru", label: "Русский" },
+  { code: "ko", label: "한국어" },
+] as const;
+
+/** Used on profile + currency settings */
+export const PROFILE_CURRENCIES = [
+  { code: "USD", label: "🇺🇸 USD – US Dollar" },
+  { code: "EUR", label: "🇪🇺 EUR – Euro" },
+  { code: "GBP", label: "🇬🇧 GBP – British Pound" },
+  { code: "JPY", label: "🇯🇵 JPY – Japanese Yen" },
+  { code: "CAD", label: "🇨🇦 CAD – Canadian Dollar" },
+  { code: "AUD", label: "🇦🇺 AUD – Australian Dollar" },
+  { code: "CHF", label: "🇨🇭 CHF – Swiss Franc" },
+  { code: "INR", label: "🇮🇳 INR – Indian Rupee" },
+  { code: "BDT", label: "🇧🇩 BDT – Bangladeshi Taka" },
+  { code: "MXN", label: "🇲🇽 MXN – Mexican Peso" },
+  { code: "BRL", label: "🇧🇷 BRL – Brazilian Real" },
+] as const;
+
+export const COUNTRIES = [
+  { code: "US", name: "United States" },
+  { code: "GB", name: "United Kingdom" },
+  { code: "CA", name: "Canada" },
+  { code: "AU", name: "Australia" },
+  { code: "DE", name: "Germany" },
+  { code: "FR", name: "France" },
+  { code: "IN", name: "India" },
+  { code: "BD", name: "Bangladesh" },
+  { code: "JP", name: "Japan" },
+  { code: "MX", name: "Mexico" },
+  { code: "BR", name: "Brazil" },
+  { code: "NG", name: "Nigeria" },
+  { code: "KE", name: "Kenya" },
+  { code: "ZA", name: "South Africa" },
+  { code: "CN", name: "China" },
+  { code: "KR", name: "South Korea" },
+  { code: "SG", name: "Singapore" },
+  { code: "AE", name: "United Arab Emirates" },
+  { code: "SA", name: "Saudi Arabia" },
+  { code: "Other", name: "Other / Not listed" },
+];
+
+/** Common IANA zones; user can pick closest city */
+export const TIMEZONES = [
+  "UTC",
+  "America/New_York",
+  "America/Chicago",
+  "America/Denver",
+  "America/Los_Angeles",
+  "America/Toronto",
+  "America/Mexico_City",
+  "America/Sao_Paulo",
+  "Europe/London",
+  "Europe/Paris",
+  "Europe/Berlin",
+  "Asia/Dhaka",
+  "Asia/Kolkata",
+  "Asia/Tokyo",
+  "Asia/Singapore",
+  "Asia/Dubai",
+  "Australia/Sydney",
+  "Pacific/Auckland",
+];

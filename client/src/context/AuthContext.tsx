@@ -6,20 +6,19 @@ import {
   useCallback,
 } from "react";
 import * as authApi from "../api/authApi";
-
-interface User {
-  id: string;
-  email: string;
-  role: "student" | "admin";
-}
+import type { User } from "../api/authApi";
+import { normalizeUser } from "../utils/normalizeUser";
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<{ twoFactorToken?: string }>;
+  complete2FALogin: (twoFactorToken: string, code: string) => Promise<void>;
+  register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
+  setUserFromServer: (user: User) => void;
 }
 
 const TOKEN_KEY = "clearpath_token";
@@ -31,6 +30,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+
+  const applySession = useCallback((rawUser: User, newToken: string) => {
+    const normalized = normalizeUser(rawUser);
+    localStorage.setItem(TOKEN_KEY, newToken);
+    localStorage.setItem(USER_KEY, JSON.stringify(normalized));
+    setToken(newToken);
+    setUser(normalized);
+  }, []);
+
   const loadUser = useCallback(async () => {
     const t = localStorage.getItem(TOKEN_KEY);
 
@@ -42,10 +50,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      setToken(t); // 👈 set early
+      setToken(t);
 
       const { user: u } = await authApi.getCurrentUser(t);
-      setUser(u);
+      const normalized = normalizeUser(u);
+      setUser(normalized);
+      localStorage.setItem(USER_KEY, JSON.stringify(normalized));
     } catch {
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(USER_KEY);
@@ -60,17 +70,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loadUser();
   }, [loadUser]);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const { user: u, token: t } = await authApi.login(email, password);
-    localStorage.setItem(TOKEN_KEY, t);
-    localStorage.setItem(USER_KEY, JSON.stringify(u));
-    setToken(t);
-    setUser(u);
+  const login = useCallback(
+    async (email: string, password: string) => {
+      const data = await authApi.login(email, password);
+      if ("requiresTwoFactor" in data && data.requiresTwoFactor) {
+        return { twoFactorToken: data.twoFactorToken };
+      }
+      const d = data as authApi.AuthResponse;
+      applySession(d.user, d.token);
+      return {};
+    },
+    [applySession]
+  );
+
+  const complete2FALogin = useCallback(
+    async (twoFactorToken: string, code: string) => {
+      const d = await authApi.verify2FALogin(twoFactorToken, code);
+      applySession(d.user, d.token);
+    },
+    [applySession]
+  );
+
+  const refreshUser = useCallback(async () => {
+    const t = localStorage.getItem(TOKEN_KEY);
+    if (!t) return;
+    const { user: u } = await authApi.getCurrentUser(t);
+    const normalized = normalizeUser(u);
+    setUser(normalized);
+    localStorage.setItem(USER_KEY, JSON.stringify(normalized));
   }, []);
 
-  const register = useCallback(async (email: string, password: string) => {
-    await authApi.register(email, password);
+  const setUserFromServer = useCallback((u: User) => {
+    const normalized = normalizeUser(u);
+    setUser(normalized);
+    localStorage.setItem(USER_KEY, JSON.stringify(normalized));
   }, []);
+
+  const register = useCallback(
+    async (name: string, email: string, password: string) => {
+      await authApi.register(name, email, password);
+    },
+    []
+  );
 
   const logout = useCallback(async () => {
     if (token) {
@@ -88,7 +129,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, token, loading, login, register, logout }}
+      value={{
+        user,
+        token,
+        loading,
+        login,
+        complete2FALogin,
+        register,
+        logout,
+        refreshUser,
+        setUserFromServer,
+      }}
     >
       {children}
     </AuthContext.Provider>

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function RegisterPage() {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -15,7 +16,7 @@ export default function RegisterPage() {
     setError('');
     setLoading(true);
     try {
-      await register(email, password);
+      await register(name, email, password);
       navigate('/login', { state: { message: 'Account created. Please log in.' } });
     } catch (err: unknown) {
       const ax = err as { response?: { data?: { message?: string } }; message?: string };
@@ -30,6 +31,17 @@ export default function RegisterPage() {
       <h2>Create account</h2>
       <form onSubmit={handleSubmit}>
         {error && <div className="alert alert-danger">{error}</div>}
+        <div className="mb-3">
+          <label className="form-label">Name</label>
+          <input
+            type="text"
+            className="form-control"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            autoComplete="name"
+            required
+          />
+        </div>
         <div className="mb-3">
           <label className="form-label">Email</label>
           <input

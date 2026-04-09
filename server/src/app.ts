@@ -29,7 +29,9 @@ app.use(
 );
 
 app.options("*", cors());
-app.use(bodyParser.json());
+/** Profile updates can include base64 avatars; default ~100kb is too small */
+app.use(bodyParser.json({ limit: "2mb" }));
+app.use(bodyParser.urlencoded({ extended: true, limit: "2mb" }));
 app.use(morgan("dev"));
 
 app.get("/", (_req, res) => {

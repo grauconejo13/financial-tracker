@@ -1,7 +1,7 @@
 import axios from "axios";
+import { getApiOrigin } from "../config/apiOrigin";
 
-const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
-const API_URL = `${API_BASE}/api/income`;
+const API_URL = `${getApiOrigin()}/api/income`;
 
 export interface IncomeRequest {
   amount: number;

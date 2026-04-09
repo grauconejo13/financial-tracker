@@ -37,7 +37,11 @@ function TransactionList() {
     setMessage("");
     setError("");
     setEditingId(transaction._id);
-    setEditAmount(String(transaction.amount));
+    setEditAmount(
+      transaction.amount === undefined || transaction.amount === null
+        ? ""
+        : String(transaction.amount),
+    );
     setEditDescription(transaction.description);
     setEditCategory(transaction.category || "");
     setEditReason("");
@@ -132,7 +136,11 @@ function TransactionList() {
 
                 return (
                   <tr key={transaction._id}>
-                    <td>{new Date(transaction.createdAt).toLocaleDateString()}</td>
+                    <td>
+                      {transaction.createdAt
+                        ? new Date(transaction.createdAt).toLocaleDateString()
+                        : "—"}
+                    </td>
 
                     <td className="text-capitalize">{transaction.type}</td>
 
@@ -186,7 +194,7 @@ function TransactionList() {
                           onChange={(e) => setEditAmount(e.target.value)}
                         />
                       ) : (
-                        `$${transaction.amount.toFixed(2)}`
+                        `$${Number(transaction.amount ?? 0).toFixed(2)}`
                       )}
                     </td>
 
