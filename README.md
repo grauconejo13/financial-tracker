@@ -133,9 +133,9 @@ Open a **new terminal** and:
    ```bash
    cp .env.example .env
    ```
-   The `.env` should contain (server runs on port 4000):
+   The `.env` should point at your API (server on port 4000):
    ```
-   VITE_API_URL=http://localhost:4000/api
+   VITE_API_URL=http://localhost:4000
    ```
 
 4. Start the client:
@@ -184,11 +184,15 @@ Open a **new terminal** and:
 
 ## Environment Variables
 
+Copy `client/.env.example` → `client/.env` and `server/.env.example` → `server/.env`.
+
 ### Client (`client/.env`)
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `VITE_API_URL` | Base API URL (no trailing slash) | `http://localhost:4000/api` |
+| Variable | Description | Example (local) |
+|----------|-------------|-----------------|
+| `VITE_API_URL` | Backend origin (`/api` optional; client normalizes it) | `http://localhost:4000` |
+
+**Vercel:** set `VITE_API_URL` to your **deployed API** URL, then **redeploy**.
 
 ### Server (`server/.env`)
 
@@ -197,6 +201,7 @@ Open a **new terminal** and:
 | `PORT` | Server port | `4000` |
 | `MONGO_URI` | MongoDB connection string | `mongodb://localhost:27017/clearpath` |
 | `JWT_SECRET` | Secret for JWT tokens | `dev-secret-change-me` |
+| `CORS_ORIGINS` | Optional comma-separated frontend URLs (Vercel previews, custom domains). `localhost:5173` is always allowed. | _(empty)_ |
 
 ---
 
@@ -209,8 +214,12 @@ Open a **new terminal** and:
 
 **"Failed to fetch" or login/register not working**
 - Verify the server is running on port 4000
-- Ensure `client/.env` has `VITE_API_URL=http://localhost:4000/api`
+- Ensure `client/.env` has `VITE_API_URL=http://localhost:4000`
 - Restart the client after changing `.env`
+
+**Works locally but not on Vercel**
+- Set `VITE_API_URL` on Vercel to your **hosted** API (not `localhost`) and redeploy
+- On Render (API host): set `CORS_ORIGINS` if your Vercel URL is not the default one in code
 
 **Port already in use**
 - Change `PORT` in `server/.env` and `VITE_API_URL` in `client/.env` accordingly

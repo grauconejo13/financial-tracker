@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 import bodyParser from "body-parser";
+import { ENV } from "./config/env";
 import { errorHandler } from "./middleware/error.middleware";
 import transactionRoutes from "./routes/transaction.routes";
 import debtRoutes from "./routes/debt.routes";
@@ -17,12 +18,18 @@ import adminTemplateRoutes from "./routes/admin.template.routes";
 
 const app = express();
 
+const corsOrigins = Array.from(
+  new Set([
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://financial-tracker-kappa-wine.vercel.app",
+    ...ENV.CORS_ORIGINS,
+  ]),
+);
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://financial-tracker-kappa-wine.vercel.app",
-    ],
+    origin: corsOrigins,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
   }),
