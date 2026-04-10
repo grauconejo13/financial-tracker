@@ -11,6 +11,7 @@ type Props = {
   size?: number;
   formatValue?: (v: number) => string;
   title?: string;
+  centerLabel?: string;
 };
 
 const DEFAULT_FORMAT = (v: number) => v.toFixed(2);
@@ -21,6 +22,7 @@ export function PieSvg({
   size = 220,
   formatValue = DEFAULT_FORMAT,
   title,
+  centerLabel = "Hover a slice",
 }: Props) {
   const [hover, setHover] = useState<number | null>(null);
   const slices = data.filter((d) => d.value > 0);
@@ -63,6 +65,19 @@ export function PieSvg({
           ))}
           <circle cx={cx} cy={cy} r={Math.max(20, radius * 0.42)} fill="white" />
         </svg>
+        <div className={`cp-pie-ghostbox ${hover != null ? "is-visible" : ""}`}>
+          <div className="cp-pie-ghostbox__title">
+            {hover != null ? paths[hover].slice.name : centerLabel}
+          </div>
+          <div className="cp-pie-ghostbox__value">
+            {hover != null ? formatValue(paths[hover].slice.value) : ""}
+          </div>
+          <div className="cp-pie-ghostbox__hint">
+            {hover != null
+              ? `${((paths[hover].slice.value / total) * 100).toFixed(1)}% of this pie`
+              : "Move over a slice to inspect it"}
+          </div>
+        </div>
 
         <div className="cp-pie-legend">
           {paths.map((p, i) => {
