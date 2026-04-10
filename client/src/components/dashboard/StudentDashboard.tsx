@@ -9,9 +9,14 @@ import {
 } from "react-icons/md";
 import { FaWallet, FaCreditCard } from "react-icons/fa";
 import { getSemester } from "../../api/semesterApi";
-import { getTransactions } from "../../api/transactionApi";
+import { getIncomes } from "../../api/incomeApi";
+import { getExpenses } from "../../api/expenseApi";
+import { fetchDashboardSummary } from "../../api/dashboardApi";
 import { useAuth } from "../../context/AuthContext";
 import TransactionList from "./TransactionList";
+import { PieSvg } from "../charts/PieSvg";
+import type { DashboardSummary } from "../../types/dashboard.types";
+import "../../styles/ghostInsights.css";
 
 type DashCard = {
   title: string;
@@ -31,7 +36,7 @@ const cards: DashCard[] = [
   },
   {
     title: "Expenses",
-    description: "Track where your money goes",
+    description: "Track expense transactions and categories",
     route: "/expense",
     Icon: MdTrendingDown,
     stripeClass: "cp-stripe-expense",
@@ -88,6 +93,7 @@ function StudentDashboard() {
   const [incomeTotal, setIncomeTotal] = useState(0);
   const [expenseTotal, setExpenseTotal] = useState(0);
   const [txCount, setTxCount] = useState(0);
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
 
   const firstName = useMemo(() => {
     const raw = user?.name?.trim() || user?.email?.split("@")[0] || "";
@@ -140,18 +146,15 @@ function StudentDashboard() {
       setTxError("");
       setTxLoading(true);
       try {
-        const list = await getTransactions();
+        const [incomeList, expenseList] = await Promise.all([getIncomes(), getExpenses()]);
         if (cancelled) return;
         let inc = 0;
         let exp = 0;
-        for (const t of list) {
-          const a = Number(t.amount) || 0;
-          if (t.type === "income") inc += a;
-          else exp += a;
-        }
+        for (const t of incomeList) inc += Number(t.amount) || 0;
+        for (const t of expenseList) exp += Number(t.amount) || 0;
         setIncomeTotal(inc);
         setExpenseTotal(exp);
-        setTxCount(list.length);
+        setTxCount(incomeList.length + expenseList.length);
       } catch (e) {
         if (!cancelled) {
           setTxError("Could not load activity summary.");
@@ -168,6 +171,21 @@ function StudentDashboard() {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await fetchDashboardSummary(token || undefined);
+        if (!cancelled) setSummary(data);
+      } catch {
+        if (!cancelled) setSummary(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
   const go = (route: string) => navigate(route);
 
   const onCardKeyDown =
@@ -178,6 +196,24 @@ function StudentDashboard() {
         go(route);
       }
     };
+
+  const fmt = (n: number) =>
+    n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const expensePie = summary?.expenseByCategory || [];
+  const flowPie = summary
+    ? [
+        { name: "Expenses", value: Math.max(0, summary.flow.expenses) },
+        { name: "Savings", value: Math.max(0, summary.flow.savings) },
+      ].filter((s) => s.value > 0)
+    : [];
+  const comparePie = summary
+    ? [
+        { name: "Your spending", value: Math.max(0, summary.ghostVsUser.expenseActual) },
+        { name: "Ghost spend", value: Math.max(0, summary.ghostVsUser.expenseGhost) },
+      ].filter((s) => s.value > 0)
+    : [];
+  const gapPie = summary?.gapByCategory || [];
 
   return (
     <div className="pb-2">
@@ -213,13 +249,13 @@ function StudentDashboard() {
             </div>
           </div>
           <div className="cp-kpi-card">
-            <div className="cp-kpi-label">Expenses logged</div>
+            <div className="cp-kpi-label">Expense transactions logged</div>
             <div className={`cp-kpi-value ${txLoading ? "text-muted" : "cp-kpi-neg"}`}>
               {txLoading ? "…" : formatMoney(expenseTotal)}
             </div>
           </div>
           <div className="cp-kpi-card">
-            <div className="cp-kpi-label">Net (income − expenses)</div>
+            <div className="cp-kpi-label">Net (income − expense transactions)</div>
             <div
               className={`cp-kpi-value ${txLoading ? "text-muted" : ""} ${
                 netFlow >= 0 ? "cp-kpi-pos" : "cp-kpi-neg"
@@ -287,6 +323,85 @@ function StudentDashboard() {
           ))}
         </div>
       </section>
+
+      {summary && (
+        <section className="cp-ghost-insights mb-4" aria-label="Ghost insights and charts">
+          <div className="cp-ghost-balance-grid mb-3">
+            <div className="cp-ghost-balance-card">
+              <div className="cp-ghost-balance-label">Real balance</div>
+              <div className="cp-ghost-balance-value">
+                {fmt(summary.ghost.realBalance)} {summary.currency}
+              </div>
+            </div>
+            <div className="cp-ghost-balance-card cp-ghost-balance-card--ghost">
+              <div className="cp-ghost-balance-label">Ghost balance</div>
+              <div className="cp-ghost-balance-value">
+                {fmt(summary.ghost.ghostBalance)} {summary.currency}
+              </div>
+            </div>
+            <div className="cp-ghost-balance-card">
+              <div className="cp-ghost-balance-label">Ghost gap (potential)</div>
+              <div className="cp-ghost-balance-value">
+                {fmt(summary.ghost.totalGap)} {summary.currency}
+              </div>
+            </div>
+          </div>
+
+          <div className="cp-ghost-chart-grid">
+            <div className="cp-ghost-chart-card">
+              <h3>Expense category breakdown</h3>
+              {expensePie.length > 0 ? (
+                <PieSvg
+                  data={expensePie}
+                  colors={["#5b5f97", "#3a0ca3", "#4cc9f0", "#f72585", "#7209b7", "#4361ee", "#06d6a0", "#ff9e00"]}
+                  formatValue={(v) => `${fmt(v)} ${summary.currency}`}
+                />
+              ) : (
+                <p className="text-muted small mb-0">Add categorized expense transactions to render this chart.</p>
+              )}
+            </div>
+
+            <div className="cp-ghost-chart-card">
+              <h3>Income / expense transactions / savings</h3>
+              {flowPie.length > 0 ? (
+                <PieSvg
+                  data={flowPie}
+                  colors={["#ef476f", "#06d6a0"]}
+                  formatValue={(v) => `${fmt(v)} ${summary.currency}`}
+                />
+              ) : (
+                <p className="text-muted small mb-0">Add transactions to render flow comparison.</p>
+              )}
+            </div>
+
+            <div className="cp-ghost-chart-card">
+              <h3>Your spend vs ghost spend</h3>
+              {comparePie.length > 0 ? (
+                <PieSvg
+                  data={comparePie}
+                  colors={["#0f766e", "#a78bfa"]}
+                  formatValue={(v) => `${fmt(v)} ${summary.currency}`}
+                />
+              ) : (
+                <p className="text-muted small mb-0">No expense transaction data yet for ghost comparison.</p>
+              )}
+            </div>
+
+            <div className="cp-ghost-chart-card">
+              <h3>Ghost gap by category</h3>
+              {gapPie.length > 0 ? (
+                <PieSvg
+                  data={gapPie}
+                  colors={["#5b5f97", "#3a0ca3", "#4cc9f0", "#f72585", "#7209b7", "#4361ee", "#06d6a0", "#ff9e00"]}
+                  formatValue={(v) => `${fmt(v)} ${summary.currency}`}
+                />
+              ) : (
+                <p className="text-muted small mb-0">No category gap yet. Add more spending records.</p>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       <TransactionList />
     </div>

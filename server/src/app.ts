@@ -17,6 +17,8 @@ import adminStatsRoutes from "./routes/admin.stats.routes";
 import accountabilityRoutes from "./routes/accountability.routes";
 import templateRoutes from "./routes/template.routes";
 import semesterRoutes from "./routes/semester.routes";
+import dashboardRoutes from "./routes/dashboard.routes";
+import ghostRoutes from "./routes/ghost.routes";
 
 const app = express();
 
@@ -48,6 +50,8 @@ app.use("/api/savings", savingsRoutes);
 app.use("/api/admin/categories", categoryRoutes);
 app.use("/api/admin/templates", adminTemplateRoutes);
 app.use("/api/admin/stats", adminStatsRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/ghost", ghostRoutes);
 
 app.use(errorHandler);
 

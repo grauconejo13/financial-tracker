@@ -17,9 +17,18 @@ export interface ExpenseRequest {
   date: string;
 }
 
+export interface Expense {
+  _id: string;
+  amount: number;
+  category: string;
+  classification: "Necessary" | "Avoidable";
+  reason: string;
+  date: string;
+}
+
 export const addExpense = async (data: ExpenseRequest) => {
   try {
-    const response = await axios.post(API_URL, data);
+    const response = await axios.post(API_URL, data, getAuthHeaders());
     return response.data;
   } catch (error: unknown) {
     if (axios.isAxiosError(error)) {
@@ -31,8 +40,8 @@ export const addExpense = async (data: ExpenseRequest) => {
 };
 
 //Get all expenses
-export const getExpenses = async () => {
-  const response = await axios.get(API_URL, getAuthHeaders());
+export const getExpenses = async (): Promise<Expense[]> => {
+  const response = await axios.get<Expense[]>(API_URL, getAuthHeaders());
   return response.data;
 };
 

@@ -1,9 +1,15 @@
- import { Request, Response } from "express";
+ import { Response } from "express";
+ import mongoose from "mongoose";
  import Income from "../models/income.model";
+ import { AuthRequest } from "../middleware/auth.middleware";
 
  // Add income
-export const addIncome = async(req: Request, res: Response) => {
+export const addIncome = async(req: AuthRequest, res: Response) => {
     try {
+        const userId = req.user?._id;
+        if (!userId) {
+            return res.status(401).json({ message: "Unauthenticated" });
+        }
         const { amount, reason, date } = req.body;
 
         if (!amount || amount <= 0) {
@@ -19,6 +25,7 @@ export const addIncome = async(req: Request, res: Response) => {
         }
 
         const newIncome = new Income({
+            user: new mongoose.Types.ObjectId(userId),
             amount,
             reason,
             date
@@ -37,9 +44,13 @@ export const addIncome = async(req: Request, res: Response) => {
 };
 
   // Get income
-  export const getIncomes = async (req: Request, res: Response) => {
+  export const getIncomes = async (req: AuthRequest, res: Response) => {
   try {
-    const incomes = await Income.find();  
+    const userId = req.user?._id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthenticated" });
+    }
+    const incomes = await Income.find({ user: userId }).sort({ date: -1, createdAt: -1 });  
     res.status(200).json(incomes);
   } catch (error) {
     console.error("Error fetching incomes:", error);
@@ -48,13 +59,17 @@ export const addIncome = async(req: Request, res: Response) => {
 };
 
 // Edit income
-export const editIncome = async (req: Request, res: Response) => {
+export const editIncome = async (req: AuthRequest, res: Response) => {
   try {
+    const userId = req.user?._id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthenticated" });
+    }
     const { id } = req.params;
     const { amount, reason, date } = req.body;
 
-    const updatedIncome = await Income.findByIdAndUpdate(
-      id,
+    const updatedIncome = await Income.findOneAndUpdate(
+      { _id: id, user: userId },
       { amount, reason, date },
       { new: true }
     );
@@ -76,11 +91,15 @@ export const editIncome = async (req: Request, res: Response) => {
 
 
 // Delete income
-export const deleteIncome = async (req: Request, res: Response) => {
+export const deleteIncome = async (req: AuthRequest, res: Response) => {
   try {
+    const userId = req.user?._id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthenticated" });
+    }
     const { id } = req.params;
 
-    const deletedIncome = await Income.findByIdAndDelete(id);
+    const deletedIncome = await Income.findOneAndDelete({ _id: id, user: userId });
 
     if (!deletedIncome) {
       return res.status(404).json({ message: "Income not found" });

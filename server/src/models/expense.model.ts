@@ -1,6 +1,11 @@
 import mongoose from "mongoose";
 
 const expenseSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    index: true,
+  },
   amount: {
     type: Number,
     required: true
@@ -22,7 +27,7 @@ const expenseSchema = new mongoose.Schema({
     type: Date,
     required: true
   }
-});
+}, { timestamps: true });
 
 export const Expense = mongoose.model("Expense", expenseSchema);
 

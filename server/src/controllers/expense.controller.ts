@@ -1,12 +1,18 @@
-import { Request, Response } from "express";
+import { Response } from "express";
+import mongoose from "mongoose";
+import { AuthRequest } from "../middleware/auth.middleware";
 import { Expense } from "../models/expense.model";
 import { expenseCategories } from "../models/expenseCategories";
 
 //let expenses: Expense[] = [];
 
 // Add expense
-export const addExpense = async (req: Request, res: Response) => {
+export const addExpense = async (req: AuthRequest, res: Response) => {
   try {
+    const userId = req.user?._id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthenticated" });
+    }
     const { amount, category, classification, reason, date } = req.body;
 
     if (!amount || amount <= 0) {
@@ -38,6 +44,7 @@ export const addExpense = async (req: Request, res: Response) => {
     }
 
     const newExpense = new Expense ({
+      user: new mongoose.Types.ObjectId(userId),
       amount,
       category,
       classification,
@@ -61,9 +68,13 @@ export const addExpense = async (req: Request, res: Response) => {
   
 
 // View expenses
-export const viewExpenses = async (req: Request, res: Response) => {
+export const viewExpenses = async (req: AuthRequest, res: Response) => {
   try {
-    const expenses = await Expense.find();
+    const userId = req.user?._id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthenticated" });
+    }
+    const expenses = await Expense.find({ user: userId }).sort({ date: -1, createdAt: -1 });
     res.status(200).json(expenses);
   } catch (error) {
     console.error("Error fetching expenses:", error);
@@ -73,8 +84,12 @@ export const viewExpenses = async (req: Request, res: Response) => {
 
 
 // Edit expense
-export const editExpense = async (req: Request, res: Response) => {
+export const editExpense = async (req: AuthRequest, res: Response) => {
   try {
+    const userId = req.user?._id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthenticated" });
+    }
     const { id } = req.params;
     const { amount, category, classification, reason, date } = req.body;
 
@@ -86,8 +101,8 @@ export const editExpense = async (req: Request, res: Response) => {
       return res.status(400).json({message: "Invalid classification"});
     }
 
-    const updatedExpense = await Expense.findByIdAndUpdate(
-      id,
+    const updatedExpense = await Expense.findOneAndUpdate(
+      { _id: id, user: userId },
       { amount, category, classification, reason, date },
       { new: true }
     );
@@ -109,11 +124,15 @@ export const editExpense = async (req: Request, res: Response) => {
 
 
 // Delete expense
-export const deleteExpense = async (req: Request, res: Response) => {
+export const deleteExpense = async (req: AuthRequest, res: Response) => {
   try {
+    const userId = req.user?._id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthenticated" });
+    }
     const { id } = req.params;
 
-    const deletedExpense = await Expense.findByIdAndDelete(id);
+    const deletedExpense = await Expense.findOneAndDelete({ _id: id, user: userId });
 
     if (!deletedExpense) {
       return res.status(404).json({ message: "Expense not found." });

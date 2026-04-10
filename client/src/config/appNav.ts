@@ -2,6 +2,7 @@ import type { IconType } from "react-icons";
 import {
   MdDashboard,
   MdTrendingUp,
+  MdTrendingDown,
   MdReceiptLong,
   MdSavings,
   MdCurrencyExchange,
@@ -25,6 +26,7 @@ export const MAIN_NAV_ITEMS: AppNavItem[] = [
   { to: "/budget", label: "Budget", Icon: FaWallet },
   { to: "/ghost", label: "Ghost", Icon: FaGhost },
   { to: "/income", label: "Income", Icon: MdTrendingUp },
+  { to: "/expense", label: "Expenses", Icon: MdTrendingDown },
   { to: "/transactions", label: "Transactions", Icon: MdReceiptLong },
   { to: "/accountability", label: "Accountability", Icon: MdHistory },
   { to: "/debts", label: "Debts", Icon: FaCreditCard },
