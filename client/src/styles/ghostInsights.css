@@ -37,7 +37,11 @@
 .cp-ghost-chart-grid {
   display: grid;
   gap: 1rem;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.cp-ghost-chart-grid--secondary {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .cp-ghost-chart-card {
@@ -45,6 +49,9 @@
   border: 1px solid #dbe3ee;
   border-radius: 14px;
   padding: 1rem;
+  min-height: 330px;
+  display: flex;
+  flex-direction: column;
 }
 
 .cp-ghost-chart-card h3 {
@@ -54,6 +61,9 @@
 
 .cp-pie-wrap {
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .cp-pie-title {
@@ -65,12 +75,15 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.85rem;
-  align-items: center;
+  align-items: flex-start;
+  position: relative;
+  justify-content: center;
 }
 
 .cp-pie-legend {
-  min-width: 210px;
+  min-width: 220px;
   flex: 1;
+  max-width: 360px;
 }
 
 .cp-pie-legend-row {
@@ -103,6 +116,43 @@
   font-variant-numeric: tabular-nums;
 }
 
+.cp-pie-ghostbox {
+  position: absolute;
+  left: 24px;
+  top: 18px;
+  min-width: 150px;
+  padding: 0.6rem 0.7rem;
+  border-radius: 10px;
+  background: rgba(17, 24, 39, 0.9);
+  color: #eef2ff;
+  border: 1px solid rgba(125, 211, 252, 0.35);
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.cp-pie-ghostbox.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.cp-pie-ghostbox__title {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.cp-pie-ghostbox__value {
+  font-size: 0.88rem;
+  margin-top: 0.1rem;
+}
+
+.cp-pie-ghostbox__hint {
+  font-size: 0.72rem;
+  margin-top: 0.15rem;
+  color: #c7d2fe;
+}
+
 .cp-suggestion-list {
   display: grid;
   gap: 0.8rem;
@@ -113,6 +163,7 @@
   padding: 0.75rem 0.85rem;
   border: 1px solid #d5dce8;
   background: #f8fafc;
+  transition: background-color 180ms ease, transform 180ms ease;
 }
 
 .cp-suggestion h4 {
@@ -123,6 +174,22 @@
 .cp-suggestion p {
   font-size: 0.88rem;
   margin: 0;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transform: translateY(6px);
+  transition: max-height 220ms ease, opacity 220ms ease, transform 220ms ease;
+}
+
+.cp-suggestion:hover {
+  background: #eef4ff;
+  transform: translateY(-1px);
+}
+
+.cp-suggestion:hover p {
+  max-height: 80px;
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .cp-suggestion--good {
@@ -135,4 +202,107 @@
 
 .cp-suggestion--alert {
   border-left: 4px solid #dc2626;
+}
+
+.cp-ghost-insight-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+
+.cp-ghost-insight-card {
+  border: 1px solid #dbe3ee;
+  border-radius: 12px;
+  padding: 0.7rem 0.8rem;
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
+  transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+  outline: none;
+}
+
+.cp-ghost-insight-card:hover,
+.cp-ghost-insight-card:focus,
+.cp-ghost-insight-card.is-active {
+  transform: translateY(-1px);
+  border-color: #93c5fd;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+}
+
+.cp-ghost-insight-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+
+.cp-ghost-insight-head h4 {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.cp-ghost-insight-gap {
+  font-size: 0.82rem;
+  color: #be123c;
+  font-weight: 700;
+}
+
+.cp-ghost-insight-meta {
+  margin-top: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.76rem;
+  color: #55657f;
+}
+
+.cp-ghost-bar {
+  margin-top: 0.45rem;
+  height: 8px;
+  border-radius: 999px;
+  background: #e5eaf4;
+  overflow: hidden;
+}
+
+.cp-ghost-bar__fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7c3aed, #ec4899);
+}
+
+.cp-ghost-insight-note {
+  margin: 0.32rem 0 0;
+  font-size: 0.74rem;
+  color: #5b6b85;
+}
+
+.cp-ghost-helper-box {
+  border: 1px solid #c7d2fe;
+  background: linear-gradient(180deg, #eef2ff, #f8faff);
+  border-radius: 12px;
+  padding: 0.75rem 0.85rem;
+}
+
+.cp-ghost-helper-box__label {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-weight: 700;
+  color: #4338ca;
+  margin-bottom: 0.25rem;
+}
+
+@media (max-width: 1280px) {
+  .cp-ghost-chart-grid,
+  .cp-ghost-chart-grid--secondary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 820px) {
+  .cp-ghost-chart-grid,
+  .cp-ghost-chart-grid--secondary {
+    grid-template-columns: 1fr;
+  }
+
+  .cp-ghost-chart-card {
+    min-height: auto;
+  }
 }

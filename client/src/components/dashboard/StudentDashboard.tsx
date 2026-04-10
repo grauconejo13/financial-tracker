@@ -201,18 +201,6 @@ function StudentDashboard() {
     n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const expensePie = summary?.expenseByCategory || [];
-  const flowPie = summary
-    ? [
-        { name: "Expenses", value: Math.max(0, summary.flow.expenses) },
-        { name: "Savings", value: Math.max(0, summary.flow.savings) },
-      ].filter((s) => s.value > 0)
-    : [];
-  const comparePie = summary
-    ? [
-        { name: "Your spending", value: Math.max(0, summary.ghostVsUser.expenseActual) },
-        { name: "Ghost spend", value: Math.max(0, summary.ghostVsUser.expenseGhost) },
-      ].filter((s) => s.value > 0)
-    : [];
   const gapPie = summary?.gapByCategory || [];
 
   return (
@@ -358,32 +346,6 @@ function StudentDashboard() {
                 />
               ) : (
                 <p className="text-muted small mb-0">Add categorized expense transactions to render this chart.</p>
-              )}
-            </div>
-
-            <div className="cp-ghost-chart-card">
-              <h3>Income / expense transactions / savings</h3>
-              {flowPie.length > 0 ? (
-                <PieSvg
-                  data={flowPie}
-                  colors={["#ef476f", "#06d6a0"]}
-                  formatValue={(v) => `${fmt(v)} ${summary.currency}`}
-                />
-              ) : (
-                <p className="text-muted small mb-0">Add transactions to render flow comparison.</p>
-              )}
-            </div>
-
-            <div className="cp-ghost-chart-card">
-              <h3>Your spend vs ghost spend</h3>
-              {comparePie.length > 0 ? (
-                <PieSvg
-                  data={comparePie}
-                  colors={["#0f766e", "#a78bfa"]}
-                  formatValue={(v) => `${fmt(v)} ${summary.currency}`}
-                />
-              ) : (
-                <p className="text-muted small mb-0">No expense transaction data yet for ghost comparison.</p>
               )}
             </div>
 
