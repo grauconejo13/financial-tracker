@@ -19,6 +19,7 @@ import templateRoutes from "./routes/template.routes";
 import semesterRoutes from "./routes/semester.routes";
 import dashboardRoutes from "./routes/dashboard.routes";
 import ghostRoutes from "./routes/ghost.routes";
+import chatRoutes from "./routes/chat.routes";
 
 const app = express();
 
@@ -37,6 +38,7 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/chat", chatRoutes);
 app.use("/api/semester", semesterRoutes);
 app.use("/api/templates", templateRoutes);
 app.use("/api/transactions", transactionRoutes);

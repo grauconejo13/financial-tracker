@@ -183,6 +183,11 @@ Open a **new terminal** and:
 
 **Backend tests:** from `server/`, run `npm test` (Vitest helpers for transaction list query parsing).
 
+### Help chat (in-app)
+
+- A **chat bubble** (bottom-right) opens **ClearPath help**: FAQ-style answers for everyone; **logged-in** users get **OpenAI** replies when the server has `OPENAI_API_KEY` set (never put that key in the frontend).
+- **API:** `POST /api/chat` with JSON `{ "message": "…", "history": [{ "role": "user"|"assistant", "content": "…" }] }` — `Authorization: Bearer` optional.
+
 ---
 
 ## Quick Reference
@@ -215,6 +220,7 @@ Copy `client/.env.example` → `client/.env` and `server/.env.example` → `serv
 | `MONGO_URI` | MongoDB connection string | `mongodb://localhost:27017/clearpath` |
 | `JWT_SECRET` | Secret for JWT tokens | `dev-secret-change-me` |
 | `CORS_ORIGINS` | Optional comma-separated frontend URLs (Vercel previews, custom domains). `localhost:5173` is always allowed. | _(empty)_ |
+| `OPENAI_API_KEY` | Optional. If set, **logged-in** users get AI help from `POST /api/chat`; otherwise FAQ-only. | _(empty)_ |
 
 ---
 

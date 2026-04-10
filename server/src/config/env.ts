@@ -13,5 +13,7 @@ export const ENV = {
   MONGO_URI: process.env.MONGO_URI,
   JWT_SECRET: process.env.JWT_SECRET || 'dev-secret-change-me',
   CORS_ORIGINS,
+  /** Optional: enables AI replies for logged-in users on POST /api/chat */
+  OPENAI_API_KEY: process.env.OPENAI_API_KEY?.trim() || '',
 };
 

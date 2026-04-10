@@ -7,6 +7,7 @@ import {
 } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
 import { MAIN_NAV_ITEMS } from "../../config/appNav";
+import ChatAssistant from "./ChatAssistant";
 
 interface LayoutProps {
   children: ReactNode;
@@ -93,6 +94,8 @@ function Layout({ children }: LayoutProps) {
             <small>© {new Date().getFullYear()} ClearPath</small>
           </div>
         </footer>
+
+        <ChatAssistant />
       </div>
     );
   }
@@ -215,6 +218,8 @@ function Layout({ children }: LayoutProps) {
           </div>
         </footer>
       </div>
+
+      <ChatAssistant />
     </div>
   );
 }

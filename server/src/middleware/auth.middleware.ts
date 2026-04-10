@@ -37,3 +37,29 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
   }
 };
 
+/** Sets req.user when a valid Bearer token is present; otherwise continues without user. */
+export const optionalAuthenticate = async (
+  req: AuthRequest,
+  _res: Response,
+  next: NextFunction
+) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return next();
+  }
+
+  const token = authHeader.split(' ')[1];
+  const blacklisted = await BlacklistedToken.findOne({ token });
+  if (blacklisted) {
+    return next();
+  }
+
+  try {
+    const decoded = jwt.verify(token, ENV.JWT_SECRET) as JwtPayload;
+    req.user = { _id: decoded.id, role: decoded.role };
+  } catch {
+    /* invalid token — treat as anonymous */
+  }
+  next();
+};
+

@@ -714,3 +714,174 @@ h6 {
   vertical-align: middle;
   font-size: 0.9375rem;
 }
+
+/* Floating help chat */
+.cp-chat-fab {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 1060;
+  box-sizing: border-box;
+  /* Integer px avoids subpixel blur when scaling the mascot */
+  width: 64px;
+  height: 64px;
+  min-width: 64px;
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none !important;
+  color: #fff !important;
+  line-height: 0;
+  transition: box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+/*
+ * Saturated lime disc — contrasts with light page bg so the mascot doesn’t “wash out”
+ * like it did on white; matches the speech-bubble tone in the artwork.
+ */
+.cp-chat-fab-bot {
+  background: linear-gradient(155deg, #4ade80 0%, #22c55e 42%, #16a34a 100%) !important;
+  border: 2px solid rgba(255, 255, 255, 0.55) !important;
+  box-shadow:
+    0 8px 28px rgba(22, 163, 74, 0.55),
+    0 2px 0 rgba(255, 255, 255, 0.2) inset,
+    0 4px 12px rgba(15, 23, 42, 0.18) !important;
+  /* No inner padding — art fills the circle; transparent PNG shows gradient behind */
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.cp-chat-fab-bot-img {
+  /* Fill inner disc (64px btn − 4px border); asset has transparent outer bg */
+  width: 60px;
+  height: 60px;
+  max-width: none;
+  object-fit: contain;
+  object-position: center;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+  flex-shrink: 0;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.cp-chat-fab-close-icon {
+  color: #fff !important;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
+}
+
+/* No scale() — scaling the button blurs raster images on many GPUs */
+.cp-chat-fab:hover {
+  color: #fff !important;
+  filter: brightness(1.06);
+  box-shadow:
+    0 12px 36px rgba(22, 163, 74, 0.6),
+    0 2px 0 rgba(255, 255, 255, 0.25) inset,
+    0 6px 16px rgba(15, 23, 42, 0.2) !important;
+}
+
+.cp-chat-header-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  padding: 0;
+  background: linear-gradient(145deg, #4ade80 0%, #22c55e 50%, #16a34a 100%);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 1px 3px rgba(22, 163, 74, 0.35);
+}
+
+.cp-chat-header-bot-img {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: contain;
+  object-position: center;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.cp-chat-panel {
+  position: fixed;
+  right: 1.25rem;
+  bottom: calc(1.25rem + 64px + 0.5rem);
+  z-index: 1055;
+  width: min(23rem, calc(100vw - 2rem));
+  max-height: min(36rem, 78vh);
+  background: var(--cp-surface);
+  border-radius: var(--cp-radius-lg);
+  overflow: hidden;
+}
+
+.cp-chat-header {
+  background: linear-gradient(135deg, #f8fafc 0%, #fff 100%);
+}
+
+.cp-chat-messages {
+  overflow-y: auto;
+  max-height: 12rem;
+  min-height: 5rem;
+}
+
+.cp-chat-faq {
+  background: linear-gradient(180deg, #f8fafc 0%, #fff 100%);
+}
+
+.cp-chat-faq-chip {
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  border-radius: 2rem !important;
+  padding: 0.35rem 0.75rem !important;
+  border: 1px solid var(--cp-border-strong) !important;
+  background: #fff !important;
+  color: var(--cp-ink-muted) !important;
+  line-height: 1.2;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.cp-chat-faq-chip:hover:not(:disabled) {
+  border-color: var(--cp-primary) !important;
+  color: var(--cp-primary) !important;
+  background: rgba(13, 148, 136, 0.08) !important;
+}
+
+.cp-chat-faq-chip:disabled {
+  opacity: 0.55;
+}
+
+.cp-chat-bubble-inner {
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.cp-chat-bubble-user {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.cp-chat-bubble-user .cp-chat-bubble-inner {
+  background: var(--cp-primary);
+  color: #fff;
+  border-radius: 0.75rem 0.75rem 0.2rem 0.75rem;
+  padding: 0.45rem 0.65rem;
+  max-width: 92%;
+}
+
+.cp-chat-bubble-bot .cp-chat-bubble-inner {
+  background: var(--cp-bg);
+  color: var(--cp-ink);
+  border-radius: 0.75rem 0.75rem 0.75rem 0.2rem;
+  padding: 0.45rem 0.65rem;
+  max-width: 95%;
+  border: 1px solid var(--cp-border);
+}
+
+.cp-chat-textarea {
+  resize: none;
+  font-size: 0.875rem;
+}
