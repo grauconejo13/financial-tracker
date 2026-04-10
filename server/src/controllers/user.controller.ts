@@ -193,6 +193,7 @@ export const updatePassword = async (
   }
 };
 
+
 export const saveCurrencyPreference = async (
   req: AuthRequest,
   res: Response,

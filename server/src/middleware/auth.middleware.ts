@@ -12,6 +12,7 @@ export interface AuthRequest extends Request {
   user?: {
     _id: string;
     role: 'student' | 'admin';
+    preferredCurrency?: string; //Added by jasmin
   };
 }
 
