@@ -4,12 +4,16 @@ export default function CurrencySelector() {
   const { setCurrencyData } = useCurrency();
 
   const handleChange = async (currency: string) => {
-    const res = await fetch("/api/user/currency", {
+    const response = await fetch("/api/user/currency", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ currency })
+      body: JSON.stringify({ currency }),
     });
 
+    if (!response.ok) {
+      console.error("Failed to update currency");
+      return;
+    }
     // re-fetch updated rate
     const rateRes = await fetch("/api/transactions");
     const rateData = await rateRes.json();
