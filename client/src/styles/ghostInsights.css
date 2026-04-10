@@ -1,0 +1,138 @@
+.cp-ghost-insights {
+  margin-top: 1.25rem;
+}
+
+.cp-ghost-balance-grid {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+
+.cp-ghost-balance-card {
+  border: 1px solid #dbe3ee;
+  border-left: 4px solid #566ee8;
+  border-radius: 14px;
+  background: #fff;
+  padding: 0.9rem 1rem;
+}
+
+.cp-ghost-balance-card--ghost {
+  border-left-color: #7c3aed;
+}
+
+.cp-ghost-balance-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  color: #66758d;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.cp-ghost-balance-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #12223d;
+}
+
+.cp-ghost-chart-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.cp-ghost-chart-card {
+  background: #fff;
+  border: 1px solid #dbe3ee;
+  border-radius: 14px;
+  padding: 1rem;
+}
+
+.cp-ghost-chart-card h3 {
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.cp-pie-wrap {
+  width: 100%;
+}
+
+.cp-pie-title {
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+
+.cp-pie-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  align-items: center;
+}
+
+.cp-pie-legend {
+  min-width: 210px;
+  flex: 1;
+}
+
+.cp-pie-legend-row {
+  display: grid;
+  grid-template-columns: 12px 1fr auto auto;
+  gap: 0.4rem;
+  align-items: center;
+  font-size: 0.83rem;
+  padding: 0.25rem 0.2rem;
+  border-radius: 8px;
+}
+
+.cp-pie-legend-row.is-active {
+  background: #f1f5ff;
+}
+
+.cp-pie-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.cp-pie-label {
+  color: #263445;
+}
+
+.cp-pie-val,
+.cp-pie-pct {
+  color: #5b6b85;
+  font-variant-numeric: tabular-nums;
+}
+
+.cp-suggestion-list {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.cp-suggestion {
+  border-radius: 12px;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid #d5dce8;
+  background: #f8fafc;
+}
+
+.cp-suggestion h4 {
+  font-size: 0.95rem;
+  margin: 0 0 0.35rem;
+}
+
+.cp-suggestion p {
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+.cp-suggestion--good {
+  border-left: 4px solid #16a34a;
+}
+
+.cp-suggestion--caution {
+  border-left: 4px solid #d97706;
+}
+
+.cp-suggestion--alert {
+  border-left: 4px solid #dc2626;
+}

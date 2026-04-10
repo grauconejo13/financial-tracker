@@ -1,14 +1,14 @@
 import axios from "axios";
 import { getApiOrigin } from "../config/apiOrigin";
-import type { GhostOverview } from "../types/dashboard.types";
+import type { DashboardSummary } from "../types/dashboard.types";
 
-const API_URL = `${getApiOrigin()}/api/ghost`;
+const API_URL = `${getApiOrigin()}/api/dashboard`;
 
-export async function fetchGhostOverview(token?: string): Promise<GhostOverview> {
+export async function fetchDashboardSummary(token?: string): Promise<DashboardSummary> {
   const authToken = token || localStorage.getItem("clearpath_token");
   if (!authToken) throw new Error("No auth token found");
 
-  const res = await axios.get<GhostOverview>(`${API_URL}/overview`, {
+  const res = await axios.get<DashboardSummary>(`${API_URL}/summary`, {
     headers: { Authorization: `Bearer ${authToken}` },
   });
   return res.data;
