@@ -1,14 +1,12 @@
-export function getCurrencySymbol(code: string) {
-  const symbols: Record<string, string> = {
-    USD: "$",
-    EUR: "€",
-    GBP: "£",
-    JPY: "¥",
-    CAD: "$",
-    AUD: "$",
-    CNY: "¥",
-    INR: "₹"
-  };
+export const currencyLabelMap: Record<string, string> = {
+  USD: "US Dollar",
+  CAD: "Canadian Dollar",
+  EUR: "Euro",
+  GBP: "British Pound",
+  JPY: "Japanese Yen",
+  AUD: "Australian Dollar"
+};
 
-  return symbols[code] || code;
-}
+export const getCurrencyLabel = (code: string) => {
+  return currencyLabelMap[code] || code;
+};
