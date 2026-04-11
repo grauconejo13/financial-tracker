@@ -31,6 +31,8 @@ const TransactionsPage = () => {
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
   const [appliedFilters, setAppliedFilters] = useState<TransactionFilters>({});
+  const [sortBy, setSortBy] = useState<"date" | "amount">("date");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   const loadCategories = useCallback(async () => {
     if (!token) return;
@@ -47,7 +49,7 @@ const TransactionsPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getTransactions(token, appliedFilters);
+      const data = await getTransactions(appliedFilters);
       setTransactions(data);
     } catch (e: unknown) {
       const ax = e as { response?: { data?: { message?: string } } };
@@ -67,9 +69,14 @@ const TransactionsPage = () => {
 
   const applyFilters = () => {
     const next: TransactionFilters = {};
+
     if (filterCategory.trim()) next.category = filterCategory.trim();
     if (filterDateFrom) next.dateFrom = filterDateFrom;
     if (filterDateTo) next.dateTo = filterDateTo;
+
+    next.sortBy = sortBy;
+    next.sortOrder = sortOrder;
+
     setAppliedFilters(next);
   };
 
@@ -215,6 +222,23 @@ const TransactionsPage = () => {
               value={filterDateTo}
               onChange={(e) => setFilterDateTo(e.target.value)}
             />
+          </div>
+          <div className="col-md-4 col-lg-3">
+            <label className="form-label">Sort</label>
+            <select
+              className="form-select"
+              value={`${sortBy}-${sortOrder}`}
+              onChange={(e) => {
+                const [by, order] = e.target.value.split("-");
+                setSortBy(by as "date" | "amount");
+                setSortOrder(order as "asc" | "desc");
+              }}
+            >
+              <option value="date-desc">Newest first</option>
+              <option value="date-asc">Oldest first</option>
+              <option value="amount-desc">Highest amount</option>
+              <option value="amount-asc">Lowest amount</option>
+            </select>
           </div>
           <div className="col-md-8 col-lg-4 d-flex flex-wrap gap-2">
             <button

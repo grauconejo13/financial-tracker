@@ -1,4 +1,6 @@
 import axios from "axios";
+import {getIncomes} from "./incomeApi";
+import { getExpenses } from "./expenseApi";
 import { getApiOrigin } from "../config/apiOrigin";
 
 const API_URL = `${getApiOrigin()}/api/transactions`;
@@ -17,34 +19,76 @@ export type TransactionFilters = {
   category?: string;
   dateFrom?: string;
   dateTo?: string;
+  sortBy?: "date" | "amount";
+  sortOrder?: "asc" | "desc";
 };
 
 export const getTransactions = async (
-  token?: string,
   filters?: TransactionFilters,
 ): Promise<Transaction[]> => {
-  const authToken = token || localStorage.getItem("clearpath_token");
-
-  if (!authToken) {
-    throw new Error("No auth token found");
-  }
-
-  const params = new URLSearchParams();
-  if (filters?.category?.trim())
-    params.set("category", filters.category.trim());
-  if (filters?.dateFrom) params.set("dateFrom", filters.dateFrom);
-  if (filters?.dateTo) params.set("dateTo", filters.dateTo);
-  const qs = params.toString();
-  const url = qs ? `${API_URL}?${qs}` : API_URL;
-
   try {
-    const res = await axios.get<{ transactions: Transaction[] }>(url, {
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-      },
+    const [incomes, expenses] = await Promise.all([
+      getIncomes(),
+      getExpenses(),
+    ]);
+
+    const normalizedIncomes: Transaction[] = incomes.map((i: any) => ({
+      _id: i._id || i.id,
+      amount: i.amount,
+      description: i.description || "Income",
+      category: i.category,
+      createdAt: i.date,
+      type: "income",
+    }));
+
+    const normalizedExpenses: Transaction[] = expenses.map((e) => ({
+      _id: e._id,
+      amount: e.amount,
+      description: e.reason || "Expense",
+      category: e.category,
+      createdAt: e.date,
+      type: "expense",
+    }));
+
+    let combined = [...normalizedIncomes, ...normalizedExpenses];
+
+    // ✅ Apply filters
+    if (filters) {
+      combined = combined.filter((tx) => {
+        if (filters.category?.trim() && tx.category !== filters.category) {
+          return false;
+        }
+
+        if (filters.dateFrom && tx.createdAt < filters.dateFrom) {
+          return false;
+        }
+
+        if (filters.dateTo && tx.createdAt > filters.dateTo) {
+          return false;
+        }
+
+        return true;
+      });
+    }
+
+    const sortBy = filters?.sortBy || "date";
+    const sortOrder = filters?.sortOrder || "desc";
+
+    combined.sort((a, b) => {
+      let comparison = 0;
+
+      if (sortBy === "date") {
+        comparison =
+          new Date(a.createdAt).getTime() -
+          new Date(b.createdAt).getTime();
+      } else if (sortBy === "amount") {
+        comparison = a.amount - b.amount;
+      }
+
+      return sortOrder === "asc" ? comparison : -comparison;
     });
 
-    return res.data.transactions;
+    return combined;
   } catch (error) {
     console.error("Failed to fetch transactions:", error);
     return [];
