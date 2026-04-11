@@ -6,6 +6,7 @@ import {
   MdTrendingDown,
   MdReceiptLong,
   MdSavings,
+  MdHistory,
 } from "react-icons/md";
 import { FaWallet, FaCreditCard } from "react-icons/fa";
 import { getSemester } from "../../api/semesterApi";
@@ -47,6 +48,13 @@ const cards: DashCard[] = [
     route: "/transactions",
     Icon: MdReceiptLong,
     stripeClass: "cp-stripe-transactions",
+  },
+  {
+    title: "Accountability",
+    description: "See every reason you logged for transaction changes",
+    route: "/accountability",
+    Icon: MdHistory,
+    stripeClass: "cp-stripe-accountability",
   },
   {
     title: "Budget",

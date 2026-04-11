@@ -177,11 +177,29 @@ Open a **new terminal** and:
 | Area | What |
 |------|------|
 | **Accountability history** | Sidebar → **Accountability**. Lists reasons you gave for **creating**, **editing**, and **deleting** transactions (with change snapshots where applicable). |
-| **Add transaction** | **Transactions** → **Add transaction** — requires a **reason** (min 5 chars) for the audit log. |
+| **Add transaction** | **Transactions** → **Add transaction** — requires **transaction date** (when it happened), **reason** (min 5 chars) for the audit log, plus amount & description. |
 | **Filters** | Same page: **category** (with datalist from your data), **date range** (`YYYY-MM-DD` via date pickers), **Apply filters** / **Clear**. |
-| **API** | `GET /api/transactions?category=&dateFrom=&dateTo=` · `GET /api/transactions/categories` · `POST /api/transactions` · `GET /api/accountability` |
+| **API** | `GET /api/transactions?category=&dateFrom=&dateTo=` · `GET /api/transactions/categories` · `POST /api/transactions` (body must include **`transactionDate`** as `YYYY-MM-DD`) · `GET /api/accountability` |
 
-**Backend tests:** from `server/`, run `npm test` (Vitest helpers for transaction list query parsing).
+### CP-24 — Filter by category
+
+| Item | Status |
+|------|--------|
+| **Filter UI** | **Transactions** → Filters card → Category field + datalist from `GET /api/transactions/categories`. |
+| **Backend** | `parseTransactionListQuery` reads `category`; `buildTransactionListFilter` applies case-insensitive exact match (`^value$`, regex-escaped). |
+| **UI + API** | **Apply filters** sends `?category=` on `getTransactions`; server returns filtered list. |
+| **Testing** | `server/src/utils/transactionListQuery.test.ts` — category-only filter, regex escaping, combined with dates. |
+
+### CP-25 — Filter by date range
+
+| Item | Status |
+|------|--------|
+| **Date UI** | **From** / **To** `<input type="date">` (ISO `YYYY-MM-DD` in the query string). |
+| **Backend** | `dateFrom` → `createdAt >=` start of UTC day; `dateTo` → `createdAt <=` end of UTC day. `dateFrom > dateTo` → **400** with clear message. |
+| **UI + API** | Client blocks inverted range before request; server validates too. |
+| **Testing** | Same Vitest file — UTC boundaries, date-only filter, same-day range, rejects inverted range. |
+
+**Backend tests:** from `server/`, run `npm test` (Vitest: `transactionListQuery` parsing & Mongo filter building).
 
 ### Help chat (in-app)
 

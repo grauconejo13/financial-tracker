@@ -5,9 +5,11 @@ import { AccountabilityLog } from '../models/AccountabilityLog.model';
 import { AuthRequest } from '../middleware/auth.middleware';
 import {
   parseTransactionListQuery,
-  buildTransactionListFilter
+  buildTransactionListFilter,
+  startOfUtcDayFromDateInput
 } from '../utils/transactionListQuery';
 
+const DATE_INPUT_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 export const createTransaction = async (
   req: AuthRequest,
@@ -20,12 +22,14 @@ export const createTransaction = async (
       return res.status(401).json({ message: 'Unauthenticated' });
     }
 
-    const { type, amount, description, category, reason } = req.body as {
+    const { type, amount, description, category, reason, transactionDate } = req.body as {
       type?: string;
       amount?: number;
       description?: string;
       category?: string;
       reason?: string;
+      /** Optional YYYY-MM-DD — when the transaction occurred (defaults to “today” UTC if omitted). */
+      transactionDate?: string;
     };
 
     if (type !== 'income' && type !== 'expense') {
@@ -46,12 +50,33 @@ export const createTransaction = async (
         .json({ message: 'Reason is required (min 5 characters)' });
     }
 
+    const dateStr =
+      typeof transactionDate === 'string' ? transactionDate.trim() : '';
+    if (!dateStr) {
+      return res
+        .status(400)
+        .json({ message: 'Transaction date is required (YYYY-MM-DD)' });
+    }
+    if (!DATE_INPUT_RE.test(dateStr)) {
+      return res
+        .status(400)
+        .json({ message: 'transactionDate must be YYYY-MM-DD' });
+    }
+    let occurredAt: Date;
+    try {
+      occurredAt = startOfUtcDayFromDateInput(dateStr);
+    } catch {
+      return res.status(400).json({ message: 'Invalid transactionDate' });
+    }
+
     const tx = await Transaction.create({
       user: new mongoose.Types.ObjectId(user._id.toString()),
       type,
       amount,
       description: description.trim(),
-      category: category?.trim() || undefined
+      category: category?.trim() || undefined,
+      createdAt: occurredAt,
+      updatedAt: occurredAt
     });
 
     await AccountabilityLog.create({
@@ -65,7 +90,8 @@ export const createTransaction = async (
           type,
           amount,
           description: description.trim(),
-          category: category?.trim() || undefined
+          category: category?.trim() || undefined,
+          transactionDate: dateStr
         }
       }
     });

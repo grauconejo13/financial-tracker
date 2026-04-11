@@ -4,6 +4,7 @@ import {
   editTransaction,
   Transaction,
 } from "../../api/transactionApi";
+import { getApiErrorMessage } from "../../utils/apiError";
 
 function TransactionList() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -22,8 +23,8 @@ function TransactionList() {
       setError("");
       const data = await getTransactions();
       setTransactions(data);
-    } catch (err: any) {
-      setError(err || "Failed to load transactions.");
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, "Failed to load transactions."));
     } finally {
       setLoading(false);
     }

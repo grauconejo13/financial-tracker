@@ -60,6 +60,12 @@ export function parseTransactionListQuery(
   if (category) parsed.category = category;
   if (dateFromRaw) parsed.dateFrom = dateFromRaw;
   if (dateToRaw) parsed.dateTo = dateToRaw;
+
+  /* YYYY-MM-DD lexicographic order matches chronological order (CP-25). */
+  if (parsed.dateFrom && parsed.dateTo && parsed.dateFrom > parsed.dateTo) {
+    throw new Error('dateFrom must be on or before dateTo');
+  }
+
   return parsed;
 }
 

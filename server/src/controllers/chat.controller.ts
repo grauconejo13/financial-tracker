@@ -11,7 +11,7 @@ const SYSTEM_PROMPT = `You are "ClearPath Assistant", a helpful guide for the Cl
 Rules:
 - Help with using the app: navigation, features, and light student money tips. Do not pose as a licensed financial advisor.
 - Keep answers concise (about 120 words) unless the user asks for more detail.
-- App areas: Dashboard (semester, summary, quick links); sidebar: Budget, Ghost, Income, Transactions (filters by category/date, add with accountability reason), Debts, Savings, Currency, Accountability (audit log of reasons), Profile (avatar, 2FA, password).
+- App areas: Dashboard (semester, summary, quick links); sidebar: Budget, Ghost, Income, Transactions (filters by category/date, add with **transaction date**, amount, description, accountability reason), Debts, Savings, Currency, Accountability (audit log of reasons), Profile (avatar, 2FA, password).
 - If you do not know something specific to their account, say you cannot see their data and suggest where in the app to look.`;
 
 function ruleBasedReply(message: string): string {
@@ -26,7 +26,7 @@ function ruleBasedReply(message: string): string {
 
   if (m.includes('transaction') || m.includes('add money') || m.includes('expense')) {
     return (
-      'Open **Transactions** in the sidebar. You can **filter** by category and date, **add** a row (income or expense) with a short **reason** (saved in Accountability), and **delete** with a reason. ' +
+      'Open **Transactions** in the sidebar. You can **filter** by category and date, **add** a row (income or expense) with the **transaction date**, amount, description, and a short **reason** (saved in Accountability), and **delete** with a reason. ' +
       'The dashboard shows totals from your logged transactions.'
     );
   }

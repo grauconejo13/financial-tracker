@@ -636,6 +636,14 @@ h6 {
   color: #047857;
 }
 
+.cp-stripe-accountability {
+  border-left-color: #0e7490;
+}
+.cp-stripe-accountability .cp-dash-icon {
+  background: rgba(14, 116, 144, 0.12);
+  color: #0e7490;
+}
+
 /* Semester banner */
 .cp-semester-banner {
   background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);

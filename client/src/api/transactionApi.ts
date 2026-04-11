@@ -37,18 +37,13 @@ export const getTransactions = async (
   const qs = params.toString();
   const url = qs ? `${API_URL}?${qs}` : API_URL;
 
-  try {
-    const res = await axios.get<{ transactions: Transaction[] }>(url, {
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-      },
-    });
+  const res = await axios.get<{ transactions: Transaction[] }>(url, {
+    headers: {
+      Authorization: `Bearer ${authToken}`,
+    },
+  });
 
-    return res.data.transactions;
-  } catch (error) {
-    console.error("Failed to fetch transactions:", error);
-    return [];
-  }
+  return res.data.transactions;
 };
 
 export const getTransactionCategories = async (
@@ -104,6 +99,8 @@ export const createTransaction = async (
     description: string;
     category?: string;
     reason: string;
+    /** When the transaction occurred (YYYY-MM-DD), stored as UTC start-of-day for filtering. */
+    transactionDate: string;
   },
   token: string,
 ): Promise<Transaction> => {

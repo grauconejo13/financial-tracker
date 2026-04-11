@@ -22,7 +22,7 @@ function SidebarNavLinks({ mobile }: { mobile?: boolean }) {
         <NavLink
           key={to}
           to={to}
-          end={to === "/dashboard"}
+          end
           {...dismiss}
           className={({ isActive }) =>
             [
