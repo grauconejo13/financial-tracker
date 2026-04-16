@@ -149,15 +149,18 @@ export const getMyTransactions = async (
       return res.status(401).json({ message: 'Unauthenticated' });
     }
 
-    const userId = new mongoose.Types.ObjectId(user._id.toString());
+    const userId = user._id;
 
-    // Fetch both sources in parallel
     const [income, expenses] = await Promise.all([
       Income.find({ user: userId }).lean(),
       Expense.find({ user: userId }).lean()
     ]);
 
-    // Normalize into a single structure
+    console.log("USER ID:", userId);
+
+    console.log("INCOME SAMPLE:", income[0]);
+    console.log("EXPENSE SAMPLE:", expenses[0]);
+
     const transactions = [
       ...income.map(i => ({
         _id: i._id,
@@ -173,12 +176,11 @@ export const getMyTransactions = async (
         amount: e.amount,
         description: e.reason,
         category: e.category,
-        classification: e.classification, // optional but useful
+        classification: e.classification,
         date: new Date(e.date ?? e.createdAt).toISOString()
       }))
     ];
 
-    // Sort newest first
     transactions.sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
