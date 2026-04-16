@@ -4,12 +4,13 @@ import {
   addSavings,
   withdrawSavings
 } from "../controllers/savings.controller";
+import { authenticate } from "../middleware/auth.middleware";
 
 const router = Router();
 
-router.get("/", getSavings);
-router.post("/add", addSavings);
-router.post("/withdraw", withdrawSavings);
+router.get("/", authenticate, getSavings);
+router.post("/add", authenticate, addSavings);
+router.post("/withdraw", authenticate, withdrawSavings);
 
 
 

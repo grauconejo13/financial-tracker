@@ -16,6 +16,7 @@ export const getMyAccountabilityLogs = async (
     }
 
     const logs = await AccountabilityLog.find({ user: user._id })
+      .populate('user', 'name email')
       .sort({ createdAt: -1 })
       .limit(MAX_LOGS)
       .lean();

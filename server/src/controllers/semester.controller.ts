@@ -2,6 +2,7 @@ import { Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 import { Semester } from '../models/Semester.model';
 import { AuthRequest } from '../middleware/auth.middleware';
+import { logAccountabilityEvent } from '../utils/accountability';
 
 function toYmd(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -64,6 +65,7 @@ export const setMySemester = async (
     }
 
     const uid = new mongoose.Types.ObjectId(user._id);
+    const previous = await Semester.findOne({ user: uid }).lean();
     const doc = await Semester.findOneAndUpdate(
       { user: uid },
       {
@@ -72,6 +74,24 @@ export const setMySemester = async (
       },
       { new: true, upsert: true, runValidators: true }
     );
+
+    await logAccountabilityEvent({
+      userId: uid,
+      action: 'semester_set',
+      entityType: 'semester',
+      entityId: doc._id,
+      reason: 'Updated semester dates',
+      detail: {
+        before: {
+          startDate: previous ? toYmd(new Date(previous.startDate)) : null,
+          endDate: previous ? toYmd(new Date(previous.endDate)) : null,
+        },
+        after: {
+          startDate: toYmd(doc.startDate),
+          endDate: toYmd(doc.endDate),
+        },
+      },
+    });
 
     return res.status(200).json({
       message: 'Semester saved',

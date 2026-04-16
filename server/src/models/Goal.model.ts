@@ -7,6 +7,7 @@ const goalFieldSchema = new mongoose.Schema({
 
 const goalSchema = new mongoose.Schema(
   {
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", index: true },
     name: { type: String, required: true },
     targetAmount: { type: Number, required: true },
     contributedAmount: { type: Number, default: 0, min: 0 },

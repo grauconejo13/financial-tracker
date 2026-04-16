@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { AuthRequest } from "../middleware/auth.middleware";
 import { Expense } from "../models/expense.model";
 import { expenseCategories } from "../models/expenseCategories";
+import { logAccountabilityEvent } from "../utils/accountability";
 
 //let expenses: Expense[] = [];
 
@@ -54,6 +55,23 @@ export const addExpense = async (req: AuthRequest, res: Response) => {
 
     await newExpense.save();
 
+    await logAccountabilityEvent({
+      userId,
+      action: "expense_create",
+      entityType: "expense",
+      entityId: newExpense._id,
+      reason: "Added expense",
+      detail: {
+        created: {
+          amount: newExpense.amount,
+          category: newExpense.category,
+          classification: newExpense.classification,
+          reason: newExpense.reason,
+          date: newExpense.date,
+        }
+      }
+    });
+
     res.status(201).json({
       message: "Expense added successfully",
       expense: newExpense,
@@ -101,6 +119,19 @@ export const editExpense = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({message: "Invalid classification"});
     }
 
+    const existingExpense = await Expense.findOne({ _id: id, user: userId });
+    if (!existingExpense) {
+      return res.status(404).json({ message: "Expense not found." });
+    }
+
+    const before = {
+      amount: existingExpense.amount,
+      category: existingExpense.category,
+      classification: existingExpense.classification,
+      reason: existingExpense.reason,
+      date: existingExpense.date,
+    };
+
     const updatedExpense = await Expense.findOneAndUpdate(
       { _id: id, user: userId },
       { amount, category, classification, reason, date },
@@ -110,6 +141,24 @@ export const editExpense = async (req: AuthRequest, res: Response) => {
     if (!updatedExpense) {
       return res.status(404).json({ message: "Expense not found." });
     }
+
+    await logAccountabilityEvent({
+      userId,
+      action: "expense_edit",
+      entityType: "expense",
+      entityId: updatedExpense._id,
+      reason: "Updated expense",
+      detail: {
+        before,
+        after: {
+          amount: updatedExpense.amount,
+          category: updatedExpense.category,
+          classification: updatedExpense.classification,
+          reason: updatedExpense.reason,
+          date: updatedExpense.date,
+        }
+      }
+    });
 
     res.json({
       message: "Expense updated successfully",
@@ -137,6 +186,23 @@ export const deleteExpense = async (req: AuthRequest, res: Response) => {
     if (!deletedExpense) {
       return res.status(404).json({ message: "Expense not found." });
     }
+
+    await logAccountabilityEvent({
+      userId,
+      action: "expense_delete",
+      entityType: "expense",
+      entityId: deletedExpense._id,
+      reason: "Deleted expense",
+      detail: {
+        deleted: {
+          amount: deletedExpense.amount,
+          category: deletedExpense.category,
+          classification: deletedExpense.classification,
+          reason: deletedExpense.reason,
+          date: deletedExpense.date,
+        }
+      }
+    });
 
     res.json({
       message: "Expense deleted successfully",

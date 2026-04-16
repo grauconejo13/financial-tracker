@@ -3,6 +3,12 @@ import { getApiOrigin } from "../config/apiOrigin";
 
 const API_URL = `${getApiOrigin()}/api/goals`;
 
+const getAuthHeaders = () => ({
+  headers: {
+    Authorization: `Bearer ${localStorage.getItem("clearpath_token")}`,
+  },
+});
+
 /**
  * Dynamic field for template-based goals
  */
@@ -46,7 +52,7 @@ export interface GoalResponse {
 // Create goal
 export const createGoal = async (data: GoalRequest): Promise<GoalResponse> => {
   try {
-    const res = await axios.post(API_URL, data);
+    const res = await axios.post(API_URL, data, getAuthHeaders());
     return res.data;
   } catch (error: any) {
     throw error.response?.data?.message || "Failed to create goal";
@@ -56,7 +62,7 @@ export const createGoal = async (data: GoalRequest): Promise<GoalResponse> => {
 // Get all goals
 export const getGoals = async (): Promise<Goal[]> => {
   try {
-    const res = await axios.get(API_URL);
+    const res = await axios.get(API_URL, getAuthHeaders());
     return res.data;
   } catch (error: any) {
     throw error.response?.data?.message || "Failed to fetch goals";
@@ -69,7 +75,7 @@ export const updateGoal = async (
   data: GoalRequest
 ): Promise<GoalResponse> => {
   try {
-    const res = await axios.put(`${API_URL}/${id}`, data);
+    const res = await axios.put(`${API_URL}/${id}`, data, getAuthHeaders());
     return res.data;
   } catch (error: any) {
     throw error.response?.data?.message || "Failed to update goal";
@@ -79,7 +85,7 @@ export const updateGoal = async (
 // Delete goal
 export const deleteGoal = async (id: string): Promise<GoalResponse> => {
   try {
-    const res = await axios.delete(`${API_URL}/${id}`);
+    const res = await axios.delete(`${API_URL}/${id}`, getAuthHeaders());
     return res.data;
   } catch (error: any) {
     throw error.response?.data?.message || "Failed to delete goal";
@@ -89,7 +95,7 @@ export const deleteGoal = async (id: string): Promise<GoalResponse> => {
 // Contribute to goal
 export const contributeToGoal = async (id: string, amount: number): Promise<{ message: string; goal: Goal }> => {
   try {
-    const res = await axios.post(`${API_URL}/${id}/contribute`, { amount });
+    const res = await axios.post(`${API_URL}/${id}/contribute`, { amount }, getAuthHeaders());
     return res.data;
   } catch (error: any) {
     throw error.response?.data?.message || "Failed to contribute to goal";

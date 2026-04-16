@@ -3,6 +3,9 @@ import {
   addExpense,
   getExpenses,
   deleteExpense,
+  updateExpense,
+  type Expense,
+  type ExpenseRequest,
 } from "../api/expenseApi";
 
 const categories = [
@@ -28,7 +31,16 @@ const ExpensePage = () => {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const [expenses, setExpenses] = useState<any[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<ExpenseRequest>({
+    amount: 0,
+    category: "",
+    classification: "Necessary",
+    reason: "",
+    date: "",
+  });
 
   //Load expenses on page load
   useEffect(() => {
@@ -86,6 +98,58 @@ const ExpensePage = () => {
       loadExpenses();
     } catch (err) {
       console.error("Delete failed", err);
+    }
+  };
+
+  const openEdit = (exp: Expense) => {
+    setEditingId(exp._id);
+    setEditForm({
+      amount: exp.amount,
+      category: exp.category,
+      classification: exp.classification,
+      reason: exp.reason,
+      date: exp.date.slice(0, 10),
+    });
+    setError("");
+    setMessage("");
+  };
+
+  const handleEditChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+    setEditForm((prev) => ({
+      ...prev,
+      [name]:
+        name === "amount"
+          ? Number(value)
+          : (value as ExpenseRequest[keyof ExpenseRequest]),
+    }));
+  };
+
+  const saveEdit = async () => {
+    if (!editingId) return;
+    setMessage("");
+    setError("");
+
+    if (
+      !editForm.amount ||
+      !editForm.category ||
+      !editForm.classification ||
+      !editForm.reason ||
+      !editForm.date
+    ) {
+      setError("All fields are required.");
+      return;
+    }
+
+    try {
+      await updateExpense(editingId, editForm);
+      setEditingId(null);
+      await loadExpenses();
+      setMessage("Expense updated successfully!");
+    } catch (err: any) {
+      setError(err || "Failed to update expense.");
     }
   };
 
@@ -171,6 +235,12 @@ const ExpensePage = () => {
               </div>
 
               <button
+                className="btn btn-outline-primary btn-sm me-2"
+                onClick={() => openEdit(exp)}
+              >
+                Edit
+              </button>
+              <button
                 className="btn btn-danger btn-sm"
                 onClick={() => handleDelete(exp._id)}
               >
@@ -179,6 +249,91 @@ const ExpensePage = () => {
             </li>
           ))}
         </ul>
+      )}
+
+      {editingId && (
+        <div className="modal d-block" style={{ background: "rgba(0,0,0,0.4)" }}>
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Edit expense</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setEditingId(null)}
+                  aria-label="Close"
+                />
+              </div>
+              <div className="modal-body">
+                <input
+                  type="number"
+                  className="form-control mb-3"
+                  name="amount"
+                  placeholder="Amount"
+                  value={editForm.amount}
+                  onChange={handleEditChange}
+                />
+                <select
+                  className="form-control mb-3"
+                  name="category"
+                  value={editForm.category}
+                  onChange={handleEditChange}
+                >
+                  <option value="">Select category</option>
+                  {categories.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  className="form-control mb-3"
+                  name="classification"
+                  value={editForm.classification}
+                  onChange={handleEditChange}
+                >
+                  <option value="">Select classification</option>
+                  {classifications.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  className="form-control mb-3"
+                  name="reason"
+                  placeholder="Reason"
+                  value={editForm.reason}
+                  onChange={handleEditChange}
+                />
+                <input
+                  type="date"
+                  className="form-control mb-3"
+                  name="date"
+                  value={editForm.date}
+                  onChange={handleEditChange}
+                />
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setEditingId(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={saveEdit}
+                >
+                  Save changes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

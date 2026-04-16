@@ -1,6 +1,8 @@
 import { Response, NextFunction } from 'express';
 import { Debt } from '../models/Debt.model';
 import { AuthRequest } from '../middleware/auth.middleware';
+import { AccountabilityLog } from '../models/AccountabilityLog.model';
+import mongoose from 'mongoose';
 
 export const createDebt = async (
   req: AuthRequest,
@@ -72,6 +74,25 @@ export const createDebt = async (
       notes: notes?.trim() || undefined
     });
 
+    await AccountabilityLog.create({
+      user: new mongoose.Types.ObjectId(user._id.toString()),
+      action: 'debt_create',
+      entityType: 'debt',
+      entityId: debt._id,
+      reason: 'Created debt',
+      detail: {
+        created: {
+          label: debt.label,
+          counterparty: debt.counterparty,
+          amount: debt.amount,
+          currency: debt.currency,
+          direction: debt.direction,
+          dueDate: debt.dueDate,
+          notes: debt.notes
+        }
+      }
+    });
+
     return res.status(201).json({ debt });
   } catch (err) {
     next(err);
@@ -128,6 +149,16 @@ export const updateDebt = async (
     if (!debt) return res.status(404).json({ message: 'Debt not found' });
 
     const errors: string[] = [];
+
+    const before = {
+      label: debt.label,
+      counterparty: debt.counterparty,
+      amount: debt.amount,
+      currency: debt.currency,
+      direction: debt.direction,
+      dueDate: debt.dueDate,
+      notes: debt.notes
+    };
     if (label !== undefined) {
       if (!label || !String(label).trim()) errors.push('Label cannot be empty');
       else debt.label = String(label).trim();
@@ -154,6 +185,26 @@ export const updateDebt = async (
 
     if (errors.length) return res.status(400).json({ errors });
     await debt.save();
+
+    const after = {
+      label: debt.label,
+      counterparty: debt.counterparty,
+      amount: debt.amount,
+      currency: debt.currency,
+      direction: debt.direction,
+      dueDate: debt.dueDate,
+      notes: debt.notes
+    };
+
+    await AccountabilityLog.create({
+      user: new mongoose.Types.ObjectId(user._id.toString()),
+      action: 'debt_edit',
+      entityType: 'debt',
+      entityId: debt._id,
+      reason: 'Updated debt details',
+      detail: { before, after }
+    });
+
     return res.json({ debt });
   } catch (err) {
     next(err);
@@ -187,6 +238,21 @@ export const makePayment = async (
     debt.paidAmount = newPaid;
     await debt.save();
 
+    await AccountabilityLog.create({
+      user: new mongoose.Types.ObjectId(user._id.toString()),
+      action: 'debt_payment',
+      entityType: 'debt',
+      entityId: debt._id,
+      reason: 'Debt payment recorded',
+      detail: {
+        payment: {
+          amount: Number(amount),
+          newPaidAmount: debt.paidAmount,
+          totalAmount: debt.amount
+        }
+      }
+    });
+
     return res.json({ debt });
   } catch (err) {
     next(err);
@@ -207,6 +273,24 @@ export const deleteDebt = async (
     if (!debt) return res.status(404).json({ message: 'Debt not found' });
 
     await Debt.findByIdAndDelete(id);
+
+    await AccountabilityLog.create({
+      user: new mongoose.Types.ObjectId(user._id.toString()),
+      action: 'debt_delete',
+      entityType: 'debt',
+      entityId: debt._id,
+      reason: 'Debt deleted',
+      detail: {
+        deleted: {
+          label: debt.label,
+          counterparty: debt.counterparty,
+          amount: debt.amount,
+          currency: debt.currency,
+          direction: debt.direction
+        }
+      }
+    });
+
     return res.status(200).json({ message: 'Debt deleted', debt });
   } catch (err) {
     next(err);

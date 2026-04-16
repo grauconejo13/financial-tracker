@@ -2,6 +2,7 @@
  import mongoose from "mongoose";
  import Income from "../models/income.model";
  import { AuthRequest } from "../middleware/auth.middleware";
+import { logAccountabilityEvent } from "../utils/accountability";
 
  // Add income
 export const addIncome = async(req: AuthRequest, res: Response) => {
@@ -32,6 +33,21 @@ export const addIncome = async(req: AuthRequest, res: Response) => {
         });
 
         await newIncome.save();
+
+        await logAccountabilityEvent({
+            userId,
+            action: "income_create",
+            entityType: "income",
+            entityId: newIncome._id,
+            reason: "Added income",
+            detail: {
+                created: {
+                    amount: newIncome.amount,
+                    reason: newIncome.reason,
+                    date: newIncome.date
+                }
+            }
+        });
 
         res.status(201).json({
             message: "Income added successfully",
@@ -68,6 +84,17 @@ export const editIncome = async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const { amount, reason, date } = req.body;
 
+    const existingIncome = await Income.findOne({ _id: id, user: userId });
+    if (!existingIncome) {
+      return res.status(404).json({ message: "Income not found" });
+    }
+
+    const before = {
+      amount: existingIncome.amount,
+      reason: existingIncome.reason,
+      date: existingIncome.date
+    };
+
     const updatedIncome = await Income.findOneAndUpdate(
       { _id: id, user: userId },
       { amount, reason, date },
@@ -77,6 +104,22 @@ export const editIncome = async (req: AuthRequest, res: Response) => {
     if (!updatedIncome) {
       return res.status(404).json({ message: "Income not found" });
     }
+
+    await logAccountabilityEvent({
+      userId,
+      action: "income_edit",
+      entityType: "income",
+      entityId: updatedIncome._id,
+      reason: "Updated income",
+      detail: {
+        before,
+        after: {
+          amount: updatedIncome.amount,
+          reason: updatedIncome.reason,
+          date: updatedIncome.date
+        }
+      }
+    });
 
     res.status(200).json({
       message: "Income updated successfully",
@@ -104,6 +147,21 @@ export const deleteIncome = async (req: AuthRequest, res: Response) => {
     if (!deletedIncome) {
       return res.status(404).json({ message: "Income not found" });
     }
+
+    await logAccountabilityEvent({
+      userId,
+      action: "income_delete",
+      entityType: "income",
+      entityId: deletedIncome._id,
+      reason: "Deleted income",
+      detail: {
+        deleted: {
+          amount: deletedIncome.amount,
+          reason: deletedIncome.reason,
+          date: deletedIncome.date
+        }
+      }
+    });
 
     res.status(200).json({
       message: "Income deleted successfully",

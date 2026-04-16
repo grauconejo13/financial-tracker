@@ -5,6 +5,11 @@ import { Transaction } from '../models/Transaction.model';
 import { Debt } from '../models/Debt.model';
 import { comparePassword, hashPassword } from '../utils/hashPassword';
 import { serializeUser } from '../utils/serializeUser';
+import {
+  diffObjects,
+  logAccountabilityEvent,
+  toComparableRecord,
+} from '../utils/accountability';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ALLOWED_LANGUAGES = new Set([
@@ -62,6 +67,22 @@ export const updateProfile = async (
 
     const user = await User.findById(req.user!._id);
     if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const before = toComparableRecord({
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      country: user.country,
+      preferredCurrency: user.preferredCurrency,
+      timezone: user.timezone,
+      avatar: user.avatar ? '[present]' : '',
+      language: user.language,
+      studentId: user.studentId,
+      program: user.program,
+      monthlyBudgetTarget: user.monthlyBudgetTarget,
+      notifyEmail: user.notifyEmail,
+      notifyPush: user.notifyPush,
+    });
 
     if (body.name !== undefined) {
       const n = String(body.name).trim();
@@ -149,6 +170,32 @@ export const updateProfile = async (
     }
 
     await user.save();
+    const after = toComparableRecord({
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      country: user.country,
+      preferredCurrency: user.preferredCurrency,
+      timezone: user.timezone,
+      avatar: user.avatar ? '[present]' : '',
+      language: user.language,
+      studentId: user.studentId,
+      program: user.program,
+      monthlyBudgetTarget: user.monthlyBudgetTarget,
+      notifyEmail: user.notifyEmail,
+      notifyPush: user.notifyPush,
+    });
+    const changedFields = diffObjects(before, after);
+    if (changedFields.length > 0) {
+      await logAccountabilityEvent({
+        userId: user._id,
+        action: 'profile_update',
+        entityType: 'profile',
+        entityId: user._id,
+        reason: 'Updated profile settings',
+        detail: { before, after, changedFields },
+      });
+    }
     return res.json({ user: serializeUser(user), message: 'Profile updated' });
   } catch (err) {
     next(err);
@@ -187,6 +234,14 @@ export const updatePassword = async (
 
     user.password = await hashPassword(newPassword);
     await user.save();
+    await logAccountabilityEvent({
+      userId: user._id,
+      action: 'password_change',
+      entityType: 'security',
+      entityId: user._id,
+      reason: 'Changed password',
+      detail: { metadata: { changedAt: new Date().toISOString() } },
+    });
     return res.json({ message: 'Password updated successfully' });
   } catch (err) {
     next(err);
@@ -208,8 +263,21 @@ export const saveCurrencyPreference = async (
     const user = await User.findById(req.user!._id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
+    const previousCurrency = user.preferredCurrency;
     user.preferredCurrency = String(currency).trim().toUpperCase();
     await user.save();
+
+    await logAccountabilityEvent({
+      userId: user._id,
+      action: 'currency_change',
+      entityType: 'profile',
+      entityId: user._id,
+      reason: 'Changed preferred currency',
+      detail: {
+        before: { preferredCurrency: previousCurrency },
+        after: { preferredCurrency: user.preferredCurrency },
+      },
+    });
 
     return res.json({
       message: 'Currency preference saved',

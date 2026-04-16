@@ -9,6 +9,7 @@ import { generateToken, generatePending2FAToken } from '../utils/generateToken';
 import { verifyTotpCode } from '../utils/totp';
 import { ENV } from '../config/env';
 import { serializeUser } from '../utils/serializeUser';
+import { logAccountabilityEvent } from '../utils/accountability';
 
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -85,6 +86,15 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 
     const token = generateToken(user.id, user.role);
 
+    await logAccountabilityEvent({
+      userId: user._id,
+      action: 'login',
+      entityType: 'security',
+      entityId: user._id,
+      reason: 'Logged in',
+      detail: { metadata: { usedTwoFactor: false } },
+    });
+
     return res.json({
       user: serializeUser(user),
       token
@@ -139,6 +149,14 @@ export const verify2FALogin = async (
     }
 
     const token = generateToken(user.id, user.role);
+    await logAccountabilityEvent({
+      userId: user._id,
+      action: 'login_2fa',
+      entityType: 'security',
+      entityId: user._id,
+      reason: 'Logged in with two-factor authentication',
+      detail: { metadata: { usedTwoFactor: true } },
+    });
     return res.json({
       user: serializeUser(user),
       token
@@ -152,15 +170,27 @@ export const logout = async (req: Request, res: Response, next: NextFunction) =>
   try {
     const authHeader = req.headers.authorization;
     const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    let logoutUserId: string | undefined;
     if (token) {
       try {
-        const decoded = jwt.verify(token, ENV.JWT_SECRET) as { exp?: number };
+        const decoded = jwt.verify(token, ENV.JWT_SECRET) as { exp?: number; id?: string };
+        logoutUserId = decoded?.id;
         if (decoded?.exp) {
           await BlacklistedToken.create({ token, expiresAt: new Date(decoded.exp * 1000) });
         }
       } catch {
         // token invalid/expired - still respond success
       }
+    }
+    if (logoutUserId) {
+      await logAccountabilityEvent({
+        userId: logoutUserId,
+        action: 'logout',
+        entityType: 'security',
+        entityId: logoutUserId,
+        reason: 'Logged out',
+        detail: { metadata: { at: new Date().toISOString() } },
+      });
     }
     return res.json({ message: 'Logged out successfully' });
   } catch (err) {
@@ -202,6 +232,15 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
     user.resetPasswordExpires = expiresAt;
     await user.save();
 
+    await logAccountabilityEvent({
+      userId: user._id,
+      action: 'password_reset_requested',
+      entityType: 'security',
+      entityId: user._id,
+      reason: 'Requested password reset',
+      detail: { metadata: { expiresAt: expiresAt.toISOString() } },
+    });
+
     const appBase = process.env.CLIENT_URL || 'http://localhost:5173';
     const resetLink = `${appBase.replace(/\/$/, '')}/reset-password?token=${rawToken}`;
     console.log(`Password reset link for ${user.email}: ${resetLink}`);
@@ -237,6 +276,15 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
     await user.save();
+
+    await logAccountabilityEvent({
+      userId: user._id,
+      action: 'password_reset_completed',
+      entityType: 'security',
+      entityId: user._id,
+      reason: 'Completed password reset',
+      detail: { metadata: { at: new Date().toISOString() } },
+    });
 
     return res.json({ message: 'Password reset successful. Please log in.' });
   } catch (err) {

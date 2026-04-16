@@ -53,12 +53,14 @@ export const getTransactionCategories = async (
   const authToken = token || localStorage.getItem("clearpath_token");
   if (!authToken) throw new Error("No auth token found");
 
-  const res = await axios.get(`${getApiOrigin()}/api/admin/categories`, {
-    headers: { Authorization: `Bearer ${authToken}` },
-  });
+  const res = await axios.get<{ categories: string[] }>(
+    `${getApiOrigin()}/api/transactions/categories`,
+    {
+      headers: { Authorization: `Bearer ${authToken}` },
+    }
+  );
 
-  // map Category objects → names
-  return res.data.map((c: any) => c.name);
+  return Array.isArray(res.data.categories) ? res.data.categories : [];
 };
 
 export const editTransaction = async (

@@ -4,6 +4,7 @@ import { AuthRequest } from '../middleware/auth.middleware';
 import { User } from '../models/User.model';
 import { comparePassword } from '../utils/hashPassword';
 import { serializeUser } from '../utils/serializeUser';
+import { logAccountabilityEvent } from '../utils/accountability';
 import {
   generateSecret,
   createOtpauthUrl,
@@ -28,6 +29,15 @@ export const setupTwoFactor = async (
     user.twoFactorSecret = secret;
     user.twoFactorEnabled = false;
     await user.save();
+
+    await logAccountabilityEvent({
+      userId: user._id,
+      action: 'two_factor_setup',
+      entityType: 'security',
+      entityId: user._id,
+      reason: 'Started two-factor authentication setup',
+      detail: { metadata: { setupStarted: true } },
+    });
 
     const otpauthUrl = createOtpauthUrl(user.email, secret);
     const qrDataUrl = await QRCode.toDataURL(otpauthUrl);
@@ -70,6 +80,15 @@ export const enableTwoFactor = async (
 
     user.twoFactorEnabled = true;
     await user.save();
+
+    await logAccountabilityEvent({
+      userId: user._id,
+      action: 'two_factor_enable',
+      entityType: 'security',
+      entityId: user._id,
+      reason: 'Enabled two-factor authentication',
+      detail: { metadata: { enabled: true } },
+    });
 
     return res.json({
       message: 'Two-factor authentication is now enabled',
@@ -116,6 +135,15 @@ export const disableTwoFactor = async (
     user.twoFactorEnabled = false;
     user.twoFactorSecret = '';
     await user.save();
+
+    await logAccountabilityEvent({
+      userId: user._id,
+      action: 'two_factor_disable',
+      entityType: 'security',
+      entityId: user._id,
+      reason: 'Disabled two-factor authentication',
+      detail: { metadata: { enabled: false } },
+    });
 
     const safe = await User.findById(user.id).select('-password');
     return res.json({

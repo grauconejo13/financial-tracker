@@ -5,6 +5,7 @@ import {
   getTransactionCategories,
   deleteTransaction,
   createTransaction,
+  editTransaction,
   type Transaction,
   type TransactionFilters,
 } from "../api/transactionApi";
@@ -35,6 +36,12 @@ const TransactionsPage = () => {
   const [addTransactionDate, setAddTransactionDate] = useState(localDateInputValue);
   const [addReason, setAddReason] = useState("");
   const [addSubmitting, setAddSubmitting] = useState(false);
+
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editAmount, setEditAmount] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editCategory, setEditCategory] = useState("");
+  const [editReason, setEditReason] = useState("");
 
   const [filterCategory, setFilterCategory] = useState("");
   const [filterDateFrom, setFilterDateFrom] = useState("");
@@ -186,6 +193,56 @@ const TransactionsPage = () => {
     } catch (e: unknown) {
       const ax = e as { response?: { data?: { message?: string } } };
       setError(ax?.response?.data?.message || "Failed to delete transaction");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const openEdit = (t: Transaction) => {
+    setEditId(t._id);
+    setEditAmount(String(t.amount));
+    setEditDescription(t.description);
+    setEditCategory(t.category ?? "");
+    setEditReason("");
+    setError(null);
+  };
+
+  const confirmEdit = async () => {
+    if (!token || !editId) return;
+    const amt = editAmount.trim() ? Number(editAmount) : undefined;
+    if (amt !== undefined && (Number.isNaN(amt) || amt <= 0)) {
+      setError("Edited amount must be a positive number");
+      return;
+    }
+    if (!editDescription.trim()) {
+      setError("Description is required");
+      return;
+    }
+    if (editReason.trim().length < 5) {
+      setError("Reason must be at least 5 characters (accountability log)");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await editTransaction(
+        editId,
+        {
+          amount: amt,
+          description: editDescription.trim(),
+          category: editCategory.trim() || undefined,
+          reason: editReason.trim(),
+        },
+        token,
+      );
+      setEditId(null);
+      setEditAmount("");
+      setEditDescription("");
+      setEditCategory("");
+      setEditReason("");
+      await loadTransactions();
+      setError(null);
+    } catch (e: unknown) {
+      setError(getApiErrorMessage(e, "Failed to update transaction"));
     } finally {
       setSubmitting(false);
     }
@@ -350,7 +407,14 @@ const TransactionsPage = () => {
                     >
                       ${Number(t.amount).toFixed(2)}
                     </td>
-                    <td>
+                    <td className="text-nowrap">
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-primary me-2"
+                        onClick={() => openEdit(t)}
+                      >
+                        Edit
+                      </button>
                       <button
                         type="button"
                         className="btn btn-sm btn-outline-danger"
@@ -553,6 +617,105 @@ const TransactionsPage = () => {
                   disabled={submitting || reason.trim().length < 5}
                 >
                   {submitting ? "Deleting…" : "Confirm delete"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editId && (
+        <div className="modal d-block" style={{ background: "#00000055" }}>
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Edit transaction</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setEditId(null)}
+                  disabled={submitting}
+                  aria-label="Close"
+                />
+              </div>
+              <div className="modal-body">
+                <p className="small text-muted">
+                  Your edit reason will appear in <strong>Accountability history</strong> for this
+                  transaction.
+                </p>
+                {error && (
+                  <div className="alert alert-danger small py-2">
+                    {error}
+                  </div>
+                )}
+                <div className="mb-3">
+                  <label className="form-label" htmlFor="edit-amount">
+                    Amount
+                  </label>
+                  <input
+                    id="edit-amount"
+                    type="number"
+                    min={0.01}
+                    step="0.01"
+                    className="form-control"
+                    value={editAmount}
+                    onChange={(e) => setEditAmount(e.target.value)}
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label" htmlFor="edit-desc">
+                    Description
+                  </label>
+                  <input
+                    id="edit-desc"
+                    type="text"
+                    className="form-control"
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label" htmlFor="edit-cat">
+                    Category (optional)
+                  </label>
+                  <input
+                    id="edit-cat"
+                    className="form-control"
+                    list="tx-category-options"
+                    value={editCategory}
+                    onChange={(e) => setEditCategory(e.target.value)}
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label" htmlFor="edit-reason">
+                    Reason for change (min 5 characters)
+                  </label>
+                  <textarea
+                    id="edit-reason"
+                    className="form-control"
+                    rows={3}
+                    value={editReason}
+                    onChange={(e) => setEditReason(e.target.value)}
+                    placeholder="Why are you changing this entry?"
+                  />
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setEditId(null)}
+                  disabled={submitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={confirmEdit}
+                  disabled={submitting || editReason.trim().length < 5}
+                >
+                  {submitting ? "Saving…" : "Save changes"}
                 </button>
               </div>
             </div>
