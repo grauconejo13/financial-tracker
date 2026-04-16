@@ -140,8 +140,8 @@ function TransactionList() {
                 return (
                   <tr key={transaction._id}>
                     <td>
-                      {transaction.createdAt
-                        ? new Date(transaction.createdAt).toLocaleDateString()
+                      {transaction.date
+                        ? new Date(transaction.date).toLocaleDateString()
                         : "—"}
                     </td>
 
