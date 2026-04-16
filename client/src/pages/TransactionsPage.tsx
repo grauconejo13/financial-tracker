@@ -126,6 +126,7 @@ const TransactionsPage = () => {
       setFilterCategory("");
       setFilterDateFrom("");
       setFilterDateTo("");
+      await loadTransactions();
       await loadCategories();
     } catch (e: unknown) {
       setError(getApiErrorMessage(e, "Failed to add transaction"));

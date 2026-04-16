@@ -32,7 +32,7 @@ export const getTransactions = async (
       getIncomes(),
       getExpenses(),
     ]);
-
+    
     const normalizedIncomes: Transaction[] = incomes.map((i: any) => ({
       _id: i._id || i.id,
       amount: i.amount,
