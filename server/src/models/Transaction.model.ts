@@ -6,6 +6,8 @@ export interface ITransaction extends Document {
   amount: number;
   description: string;
   category?: string | Types.ObjectId;
+  sourceType?: 'income' | 'expense' | 'transaction';
+  sourceId?: Types.ObjectId;
 
   isDeleted: boolean;
   deletedAt?: Date;
@@ -23,6 +25,12 @@ const TransactionSchema = new Schema<ITransaction>(
     amount: { type: Number, required: true },
     description: { type: String, required: true, trim: true },
     category: { type: Schema.Types.Mixed },
+    sourceType: {
+      type: String,
+      enum: ['income', 'expense', 'transaction'],
+      default: 'transaction'
+    },
+    sourceId: { type: Schema.Types.ObjectId },
 
     isDeleted: { type: Boolean, default: false },
     deletedAt: { type: Date },
@@ -31,6 +39,8 @@ const TransactionSchema = new Schema<ITransaction>(
   },
   { timestamps: true }
 );
+
+TransactionSchema.index({ user: 1, sourceType: 1, sourceId: 1 }, { unique: true, sparse: true });
 
 export const Transaction = model<ITransaction>('Transaction', TransactionSchema);
 

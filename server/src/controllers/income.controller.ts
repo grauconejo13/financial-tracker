@@ -1,6 +1,7 @@
  import { Response } from "express";
  import mongoose from "mongoose";
  import Income from "../models/income.model";
+import { Transaction } from "../models/Transaction.model";
  import { AuthRequest } from "../middleware/auth.middleware";
 import { logAccountabilityEvent } from "../utils/accountability";
 
@@ -33,6 +34,30 @@ export const addIncome = async(req: AuthRequest, res: Response) => {
         });
 
         await newIncome.save();
+
+        const occurredAt = new Date(newIncome.date);
+        await Transaction.findOneAndUpdate(
+          {
+            user: new mongoose.Types.ObjectId(userId),
+            sourceType: "income",
+            sourceId: newIncome._id
+          },
+          {
+            $set: {
+              type: "income",
+              amount: Number(newIncome.amount),
+              description: String(newIncome.reason || "Income"),
+              category: undefined,
+              createdAt: occurredAt
+            },
+            $setOnInsert: {
+              user: new mongoose.Types.ObjectId(userId),
+              sourceType: "income",
+              sourceId: newIncome._id
+            }
+          },
+          { upsert: true, new: true }
+        );
 
         await logAccountabilityEvent({
             userId,
@@ -105,6 +130,29 @@ export const editIncome = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: "Income not found" });
     }
 
+    await Transaction.findOneAndUpdate(
+      {
+        user: new mongoose.Types.ObjectId(userId),
+        sourceType: "income",
+        sourceId: updatedIncome._id
+      },
+      {
+        $set: {
+          type: "income",
+          amount: Number(updatedIncome.amount),
+          description: String(updatedIncome.reason || "Income"),
+          category: undefined,
+          createdAt: new Date(updatedIncome.date)
+        },
+        $setOnInsert: {
+          user: new mongoose.Types.ObjectId(userId),
+          sourceType: "income",
+          sourceId: updatedIncome._id
+        }
+      },
+      { upsert: true, new: true }
+    );
+
     await logAccountabilityEvent({
       userId,
       action: "income_edit",
@@ -147,6 +195,22 @@ export const deleteIncome = async (req: AuthRequest, res: Response) => {
     if (!deletedIncome) {
       return res.status(404).json({ message: "Income not found" });
     }
+
+    await Transaction.findOneAndUpdate(
+      {
+        user: new mongoose.Types.ObjectId(userId),
+        sourceType: "income",
+        sourceId: deletedIncome._id
+      },
+      {
+        $set: {
+          isDeleted: true,
+          deletedAt: new Date(),
+          deletedBy: new mongoose.Types.ObjectId(userId),
+          deleteReason: "Deleted from Income page"
+        }
+      }
+    );
 
     await logAccountabilityEvent({
       userId,

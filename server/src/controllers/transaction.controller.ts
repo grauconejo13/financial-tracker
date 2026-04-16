@@ -209,6 +209,15 @@ export const deleteTransaction = async (
       return res.status(409).json({ message: 'Transaction already deleted' });
     }
 
+    if (tx.sourceType && tx.sourceType !== 'transaction') {
+      return res.status(409).json({
+        message:
+          tx.sourceType === 'income'
+            ? 'Delete this entry from the Income page'
+            : 'Delete this entry from the Expense page'
+      });
+    }
+
     const deletedSnapshot = {
       type: tx.type,
       amount: tx.amount,
@@ -295,6 +304,15 @@ export const editTransaction = async (
 
     if (tx.isDeleted) {
       return res.status(409).json({ message: 'Cannot edit a deleted transaction' });
+    }
+
+    if (tx.sourceType && tx.sourceType !== 'transaction') {
+      return res.status(409).json({
+        message:
+          tx.sourceType === 'income'
+            ? 'Edit this entry from the Income page'
+            : 'Edit this entry from the Expense page'
+      });
     }
 
     const before = {

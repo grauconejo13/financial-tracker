@@ -2,6 +2,7 @@ import { Response } from "express";
 import mongoose from "mongoose";
 import { AuthRequest } from "../middleware/auth.middleware";
 import { Expense } from "../models/expense.model";
+import { Transaction } from "../models/Transaction.model";
 import { expenseCategories } from "../models/expenseCategories";
 import { Category } from "../models/Category.model";
 import { logAccountabilityEvent } from "../utils/accountability";
@@ -61,6 +62,29 @@ export const addExpense = async (req: AuthRequest, res: Response) => {
     });
 
     await newExpense.save();
+
+    await Transaction.findOneAndUpdate(
+      {
+        user: new mongoose.Types.ObjectId(userId),
+        sourceType: "expense",
+        sourceId: newExpense._id
+      },
+      {
+        $set: {
+          type: "expense",
+          amount: Number(newExpense.amount),
+          description: String(newExpense.reason || "Expense"),
+          category: newExpense.category,
+          createdAt: new Date(newExpense.date)
+        },
+        $setOnInsert: {
+          user: new mongoose.Types.ObjectId(userId),
+          sourceType: "expense",
+          sourceId: newExpense._id
+        }
+      },
+      { upsert: true, new: true }
+    );
 
     await logAccountabilityEvent({
       userId,
@@ -157,6 +181,29 @@ export const editExpense = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: "Expense not found." });
     }
 
+    await Transaction.findOneAndUpdate(
+      {
+        user: new mongoose.Types.ObjectId(userId),
+        sourceType: "expense",
+        sourceId: updatedExpense._id
+      },
+      {
+        $set: {
+          type: "expense",
+          amount: Number(updatedExpense.amount),
+          description: String(updatedExpense.reason || "Expense"),
+          category: updatedExpense.category,
+          createdAt: new Date(updatedExpense.date)
+        },
+        $setOnInsert: {
+          user: new mongoose.Types.ObjectId(userId),
+          sourceType: "expense",
+          sourceId: updatedExpense._id
+        }
+      },
+      { upsert: true, new: true }
+    );
+
     await logAccountabilityEvent({
       userId,
       action: "expense_edit",
@@ -201,6 +248,22 @@ export const deleteExpense = async (req: AuthRequest, res: Response) => {
     if (!deletedExpense) {
       return res.status(404).json({ message: "Expense not found." });
     }
+
+    await Transaction.findOneAndUpdate(
+      {
+        user: new mongoose.Types.ObjectId(userId),
+        sourceType: "expense",
+        sourceId: deletedExpense._id
+      },
+      {
+        $set: {
+          isDeleted: true,
+          deletedAt: new Date(),
+          deletedBy: new mongoose.Types.ObjectId(userId),
+          deleteReason: "Deleted from Expense page"
+        }
+      }
+    );
 
     await logAccountabilityEvent({
       userId,
