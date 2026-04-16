@@ -5,6 +5,8 @@ export function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+export const UNCATEGORIZED_FILTER_VALUE = '__uncategorized__';
+
 export type TransactionListQuery = {
   category?: string;
   dateFrom?: string;
@@ -85,10 +87,16 @@ export function buildTransactionListFilter(
 
   if (listQuery.category) {
     const c = listQuery.category;
-    const or: Record<string, unknown>[] = [
-      { category: new RegExp(`^${escapeRegex(c)}$`, 'i') }
-    ];
-    if (mongoose.isValidObjectId(c)) {
+    const or: Record<string, unknown>[] =
+      c === UNCATEGORIZED_FILTER_VALUE
+        ? [
+            { category: { $exists: false } },
+            { category: null },
+            { category: '' },
+            { category: /^\s*$/ }
+          ]
+        : [{ category: new RegExp(`^${escapeRegex(c)}$`, 'i') }];
+    if (c !== UNCATEGORIZED_FILTER_VALUE && mongoose.isValidObjectId(c)) {
       or.push({ category: new mongoose.Types.ObjectId(c) });
     }
     filter.$or = or;

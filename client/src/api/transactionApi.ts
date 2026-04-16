@@ -2,6 +2,7 @@ import axios from "axios";
 import { getApiOrigin } from "../config/apiOrigin";
 
 const API_URL = `${getApiOrigin()}/api/transactions`;
+export const UNCATEGORIZED_CATEGORY_FILTER = "__uncategorized__";
 
 export interface Transaction {
   _id: string;

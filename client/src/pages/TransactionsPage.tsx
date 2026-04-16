@@ -6,6 +6,7 @@ import {
   deleteTransaction,
   createTransaction,
   editTransaction,
+  UNCATEGORIZED_CATEGORY_FILTER,
   type Transaction,
   type TransactionFilters,
 } from "../api/transactionApi";
@@ -114,8 +115,14 @@ const TransactionsPage = () => {
       return;
     }
     const next: TransactionFilters = {};
-
-    if (filterCategory.trim()) next.category = filterCategory.trim();
+    const categoryInput = filterCategory.trim();
+    if (categoryInput) {
+      const normalized = categoryInput.toLowerCase();
+      next.category =
+        normalized === "uncategorized" || normalized === "no category"
+          ? UNCATEGORIZED_CATEGORY_FILTER
+          : categoryInput;
+    }
     if (filterDateFrom) next.dateFrom = filterDateFrom;
     if (filterDateTo) next.dateTo = filterDateTo;
 
@@ -297,6 +304,7 @@ const TransactionsPage = () => {
               onChange={(e) => setFilterCategory(e.target.value)}
             />
             <datalist id="tx-category-options">
+              <option value="Uncategorized" />
               {categories.map((c) => (
                 <option key={c} value={c} />
               ))}
@@ -366,7 +374,12 @@ const TransactionsPage = () => {
           <p className="small text-muted mt-3 mb-0">
             Showing results for{" "}
             {[
-              appliedFilters.category && `category “${appliedFilters.category}”`,
+              appliedFilters.category &&
+                `category “${
+                  appliedFilters.category === UNCATEGORIZED_CATEGORY_FILTER
+                    ? "Uncategorized"
+                    : appliedFilters.category
+                }”`,
               appliedFilters.dateFrom && `from ${appliedFilters.dateFrom}`,
               appliedFilters.dateTo && `through ${appliedFilters.dateTo}`,
             ]
